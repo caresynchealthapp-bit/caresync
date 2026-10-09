@@ -14,6 +14,8 @@ if (!$dbconn) {
     die("Database connection failed: " . pg_last_error());
 }
 
+pg_query($dbconn, "SET TIME ZONE 'Asia/Colombo'");
+
 // Wrapper class so your existing index.php and login.php queries work without modification
 class DBWrapper {
     private $conn;
