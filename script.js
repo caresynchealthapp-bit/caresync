@@ -69,7 +69,7 @@ function triggerAlert(task) {
     const formData = new FormData();
     formData.append('task_id', task.id);
 
-    fetch('send_email.php', {
+    fetch('send-email.php', {
         method: 'POST',
         body: formData
     })
