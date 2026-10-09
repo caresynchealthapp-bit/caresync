@@ -65,11 +65,13 @@ function triggerAlert(task) {
     if (Notification.permission === 'granted') {
         new Notification(title, { body: body });
     }
+    
     // NEW: Fire an asynchronous request to send the email
     const formData = new FormData();
     formData.append('task_id', task.id);
 
-    fetch('send-email.php', {
+    // FIXED: Changed hyphen to underscore to match your file exactly
+    fetch('send_email.php', {
         method: 'POST',
         body: formData
     })
