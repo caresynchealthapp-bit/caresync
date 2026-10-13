@@ -71,7 +71,7 @@ function triggerAlert(task) {
     formData.append('task_id', task.id);
 
     // FIXED: Changed hyphen to underscore to match your file exactly
-    fetch('send_email.php', {
+    fetch('send-email.php', {
         method: 'POST',
         body: formData
     })
