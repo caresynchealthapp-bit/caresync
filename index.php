@@ -158,6 +158,9 @@ function formatDateTime($datetime) {
         <header class="header">
             <h1 id="page-title">Family Overview</h1>
             <div class="user-controls">
+                <button class="notification-btn" style="background:none; border:none; font-size:22px; color:var(--text-gray); margin-right:20px; cursor:pointer;" title="Test Alert">
+                    <i class="fas fa-bell"></i>
+                </button>
                 <div class="user-profile">
                     <span class="user-name"><i class="fas fa-user-circle"></i> <?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
                     <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
