@@ -2,13 +2,6 @@
 require 'db.php';
 date_default_timezone_set('Asia/Colombo');
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-require 'PHPMailer/src/Exception.php';
-require 'PHPMailer/src/PHPMailer.php';
-require 'PHPMailer/src/SMTP.php';
-
 // --- FIXED DATABASE QUERY: TARGET EXACT TASK ID FROM JAVASCRIPT ---
 if (isset($_POST['task_id']) && is_numeric($_POST['task_id'])) {
     $target_id = (int)$_POST['task_id'];
@@ -38,72 +31,81 @@ if ($result && $result->num_rows > 0) {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $dashboard_url = "$protocol://$host/index.php";
 
+    // --- PASTE YOUR BREVO API KEY HERE ---
+    $api_key = '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';
+
     while ($task = $result->fetch_assoc()) {
-        $to = $task['user_email'];
-        $mail = new PHPMailer(true);
-
-        try {
-            // SMTP Settings for Port 587 (Bypasses Render's Port 465 Block)
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'caresync.healthapp@gmail.com';
-            $mail->Password   = 'oiteedxjxlraxfni'; // Your verified App Password
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; 
-            $mail->Port       = 587;
-
-            // Email Headers
-            $mail->setFrom('caresync.healthapp@gmail.com', 'CareSync Alerts');
-            $mail->addAddress($to);
-            $mail->isHTML(true);
-            $mail->Subject = "CareSync Alert: {$task['member_name']}'s Task is Due!";
-            
-            // HTML Body
-            $message = "
-            <html>
-            <head>
-                <style>
-                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; padding: 20px; }
-                    .container { max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-                    .header { font-size: 24px; color: #2563eb; font-weight: bold; text-align: center; margin-bottom: 25px; }
-                    .task-card { background-color: #f1f5f9; border-left: 4px solid #2563eb; padding: 15px 20px; border-radius: 6px; margin-bottom: 25px; }
-                    .task-title { font-size: 18px; font-weight: bold; margin: 0 0 8px 0; color: #1d4ed8; }
-                    .task-detail { margin: 5px 0; font-size: 14px; color: #475569; }
-                    .btn-container { text-align: center; margin-top: 30px; }
-                    .btn { background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block; }
-                    .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; }
-                </style>
-            </head>
-            <body>
-                <div class='container'>
-                    <div class='header'>💙 CareSync</div>
-                    <p>Hello,</p>
-                    <p>It's time for <strong>" . htmlspecialchars($task['member_name']) . "</strong>'s scheduled health task.</p>
-                    <div class='task-card'>
-                        <h3 class='task-title'>" . htmlspecialchars($task['title']) . "</h3>
-                        <p class='task-detail'><strong>Instructions:</strong> " . (!empty($task['instructions']) ? htmlspecialchars($task['instructions']) : 'None') . "</p>
-                        <p class='task-detail'><strong>Time:</strong> " . date('h:i A', strtotime($task['schedule_time'])) . "</p>
-                    </div>
-                    <div class='btn-container'>
-                        <a href='{$dashboard_url}' class='btn'>Open Dashboard</a>
-                    </div>
-                    <div class='footer'>This is an automated alert from your CareSync family health tracker.</div>
+        $to_email = $task['user_email'];
+        $member_name = htmlspecialchars($task['member_name']);
+        $title = htmlspecialchars($task['title']);
+        $instructions = !empty($task['instructions']) ? htmlspecialchars($task['instructions']) : 'None';
+        $time = date('h:i A', strtotime($task['schedule_time']));
+        
+        $subject = "CareSync Alert: {$member_name}'s Task is Due!";
+        
+        $htmlContent = "
+        <html>
+        <head>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #1e293b; padding: 20px; }
+                .container { max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+                .header { font-size: 24px; color: #2563eb; font-weight: bold; text-align: center; margin-bottom: 25px; }
+                .task-card { background-color: #f1f5f9; border-left: 4px solid #2563eb; padding: 15px 20px; border-radius: 6px; margin-bottom: 25px; }
+                .task-title { font-size: 18px; font-weight: bold; margin: 0 0 8px 0; color: #1d4ed8; }
+                .task-detail { margin: 5px 0; font-size: 14px; color: #475569; }
+                .btn-container { text-align: center; margin-top: 30px; }
+                .btn { background-color: #2563eb; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block; }
+                .footer { margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>💙 CareSync</div>
+                <p>Hello,</p>
+                <p>It's time for <strong>{$member_name}</strong>'s scheduled health task.</p>
+                <div class='task-card'>
+                    <h3 class='task-title'>{$title}</h3>
+                    <p class='task-detail'><strong>Instructions:</strong> {$instructions}</p>
+                    <p class='task-detail'><strong>Time:</strong> {$time}</p>
                 </div>
-            </body>
-            </html>";
+                <div class='btn-container'>
+                    <a href='{$dashboard_url}' class='btn'>Open Dashboard</a>
+                </div>
+                <div class='footer'>This is an automated alert from your CareSync family health tracker.</div>
+            </div>
+        </body>
+        </html>";
 
-            $mail->Body = $message;
-            
-            // Send the email
-            $mail->send();
+        // Build the JSON payload for the Brevo API
+        $data = [
+            'sender' => ['name' => 'CareSync Alerts', 'email' => 'caresync.healthapp@gmail.com'],
+            'to' => [['email' => $to_email]],
+            'subject' => $subject,
+            'htmlContent' => $htmlContent
+        ];
 
-            // Update Database
+        // Execute the HTTPS POST Request via cURL
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, 'https://api.brevo.com/v3/smtp/email');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json',
+            'api-key: ' . $api_key,
+            'Content-Type: application/json'
+        ]);
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http_code == 201 || $http_code == 200) {
             $task_id = (int)$task['id'];
             $conn->query("UPDATE tasks SET email_sent = TRUE WHERE id = $task_id");
-            echo "HTML Email successfully delivered to $to<br>";
-
-        } catch (Exception $e) {
-            echo "Failed to send to $to: Mailer Error: {$mail->ErrorInfo}<br>";
+            echo "API Email successfully delivered to $to_email<br>";
+        } else {
+            echo "Failed to send to $to_email via API. Code: $http_code. Response: $response<br>";
         }
     }
 } else {
