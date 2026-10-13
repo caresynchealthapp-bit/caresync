@@ -9,15 +9,27 @@ require 'PHPMailer/src/Exception.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 
-$current_time = date('Y-m-d H:i:s');
-
-$sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
-        FROM tasks t 
-        JOIN members m ON t.member_id = m.id 
-        JOIN users u ON m.user_id = u.id 
-        WHERE t.schedule_time <= '$current_time' 
-          AND t.status = 'Pending' 
-          AND t.email_sent = FALSE";
+// --- FIXED DATABASE QUERY: TARGET EXACT TASK ID FROM JAVASCRIPT ---
+if (isset($_POST['task_id']) && is_numeric($_POST['task_id'])) {
+    $target_id = (int)$_POST['task_id'];
+    $sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
+            FROM tasks t 
+            JOIN members m ON t.member_id = m.id 
+            JOIN users u ON m.user_id = u.id 
+            WHERE t.id = $target_id 
+              AND t.status = 'Pending' 
+              AND t.email_sent = FALSE";
+} else {
+    // Fallback if the script is run manually in the browser
+    $current_time = date('Y-m-d H:i:s');
+    $sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
+            FROM tasks t 
+            JOIN members m ON t.member_id = m.id 
+            JOIN users u ON m.user_id = u.id 
+            WHERE t.schedule_time <= '$current_time' 
+              AND t.status = 'Pending' 
+              AND t.email_sent = FALSE";
+}
 
 $result = $conn->query($sql);
 
