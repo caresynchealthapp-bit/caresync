@@ -31,9 +31,6 @@ if ($result && $result->num_rows > 0) {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $dashboard_url = "$protocol://$host/index.php";
 
-    // --- PASTE YOUR BREVO API KEY HERE ---
-    $api_key = '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';
-
     while ($task = $result->fetch_assoc()) {
         $to_email = $task['user_email'];
         $member_name = htmlspecialchars($task['member_name']);
@@ -76,23 +73,24 @@ if ($result && $result->num_rows > 0) {
         </body>
         </html>";
 
-        // Build the JSON payload for the Brevo API
+        // Build the JSON payload for Google Apps Script
         $data = [
-            'sender' => ['name' => 'CareSync Alerts', 'email' => 'caresync.healthapp@gmail.com'],
-            'to' => [['email' => $to_email]],
+            'to' => $to_email,
             'subject' => $subject,
             'htmlContent' => $htmlContent
         ];
 
+        // PASTE YOUR GOOGLE WEB APP URL HERE
+        $google_script_url = 'https://script.google.com/macros/s/AKfycbzqVsoKCLbtcREInR9yRx5M48bW6N1sztBi4Mvrqt_brj1Cshfuh6hq4raqJEkSO8y9/exec';
+
         // Execute the HTTPS POST Request via cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, 'https://api.brevo.com/v3/smtp/email');
+        curl_setopt($ch, CURLOPT_URL, $google_script_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Required for Google Scripts
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Accept: application/json',
-            'api-key: ' . $api_key,
             'Content-Type: application/json'
         ]);
 
@@ -100,12 +98,13 @@ if ($result && $result->num_rows > 0) {
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($http_code == 201 || $http_code == 200) {
+        // Google Apps Script redirects, so a 200 or 302 code means success
+        if ($http_code == 200 || $http_code == 302) {
             $task_id = (int)$task['id'];
             $conn->query("UPDATE tasks SET email_sent = TRUE WHERE id = $task_id");
-            echo "API Email successfully delivered to $to_email<br>";
+            echo "API Email successfully delivered to $to_email via Google Apps Script<br>";
         } else {
-            echo "Failed to send to $to_email via API. Code: $http_code. Response: $response<br>";
+            echo "Failed to send. Code: $http_code. Response: $response<br>";
         }
     }
 } else {
