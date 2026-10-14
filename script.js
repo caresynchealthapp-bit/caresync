@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial task check and polling for in-app alert banners
     checkTasks();
     setInterval(checkTasks, 10000);
-});
 
     // 2. Request Notification Permission
     function requestPerm() {
