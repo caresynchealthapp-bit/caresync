@@ -16,7 +16,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html/
 
 # Install composer packages inside the Linux image
-RUN composer install --no-dev --optimize-autoloader
+RUN composer update --no-dev --optimize-autoloader
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
