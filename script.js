@@ -16,13 +16,27 @@ function switchView(viewId, element, pageTitle) {
     }
 }
 
-function closeMobileMenu() {
+// Touch-compatible drawer handlers for Android / iOS
+function toggleMobileMenu(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
+
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('open');
+}
+
+function closeMobileMenu(e) {
+    if (e) e.stopPropagation();
+    const sidebar = document.getElementById('app-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
     if (sidebar) sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('open');
 }
-
 // --- 2. NOTIFICATION SYSTEM ---
 
 function playDing() {
@@ -137,18 +151,16 @@ function checkTasks() {
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Mobile Sidebar Drawer Controls
     const menuBtn = document.getElementById('menu-toggle-btn');
-    const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
-    if (menuBtn && sidebar) {
-        menuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            if (overlay) overlay.classList.toggle('open');
-        });
+    if (menuBtn) {
+        menuBtn.addEventListener('click', toggleMobileMenu);
+        menuBtn.addEventListener('touchend', toggleMobileMenu, { passive: false });
     }
 
     if (overlay) {
         overlay.addEventListener('click', closeMobileMenu);
+        overlay.addEventListener('touchend', closeMobileMenu, { passive: false });
     }
 
     // 2. Request Notification Permission

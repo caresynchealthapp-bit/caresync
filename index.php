@@ -131,13 +131,13 @@ function formatDateTime($datetime) {
 
     <!-- Mobile Top Header Bar -->
     <header class="mobile-topbar">
-        <button id="menu-toggle-btn" class="menu-btn" aria-label="Toggle Navigation">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="brand"><i class="fas fa-heartbeat"></i> CareSync</div>
-        <button id="request-notif-btn" class="mobile-bell-btn" title="Enable System Notifications">
-            <i class="fas fa-bell"></i>
-        </button>
+    <button id="menu-toggle-btn" class="menu-btn" aria-label="Toggle Navigation" onclick="toggleMobileMenu(event)">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="brand"><i class="fas fa-heartbeat"></i> CareSync</div>
+    <button id="request-notif-btn" class="mobile-bell-btn" title="Enable System Notifications">
+        <i class="fas fa-bell"></i>
+    </button>
     </header>
 
     <!-- Overlay backdrop when menu is open on mobile -->

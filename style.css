@@ -1,4 +1,4 @@
-:root {
+tch:root {
     --primary: #2563eb;
     --primary-light: #eff6ff;
     --text-dark: #1e293b;
@@ -30,6 +30,26 @@ body {
 /* Mobile topbar MUST be completely removed from layout on desktop */
 .mobile-topbar {
     display: none !important;
+}
+
+.mobile-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Ensure it stays above everything */
+    pointer-events: auto;
+}
+
+.menu-btn {
+    cursor: pointer;
+    touch-action: manipulation; /* Removes the 300ms mobile tap delay */
+    -webkit-tap-highlight-color: transparent;
+    padding: 10px;
+    z-index: 1001;
+}
+
+/* Ensure the icon itself doesn't steal the click target from the button */
+.menu-btn * {
+    pointer-events: none;
 }
 
 .sidebar-overlay {
