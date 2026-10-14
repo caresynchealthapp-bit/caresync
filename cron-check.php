@@ -26,8 +26,7 @@ $auth = [
 ];
 
 // Provide an explicit client instance with a 30-second timeout to avoid discovery errors
-$httpClient = new GuzzleClient(['timeout' => 30]);
-$webPush = new WebPush($auth, [], 30, $httpClient);
+$webPush = new WebPush($auth);
 
 $query = "SELECT tasks.*, members.name AS member_name, users.id AS user_id, users.email AS user_email 
           FROM tasks
