@@ -116,7 +116,7 @@ function formatDateTime($datetime) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareSync | Family Health Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
     <style>
         .form-card { background: var(--white); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; margin-bottom: 24px; }
         .form-group { margin-bottom: 16px; }
