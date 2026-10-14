@@ -6,6 +6,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
+use GuzzleHttp\Client as GuzzleClient;
 
 $secretKey = "CARE_SYNC_SECRET_CRON";
 if (!isset($_GET['key']) || $_GET['key'] !== $secretKey) {
@@ -15,7 +16,7 @@ if (!isset($_GET['key']) || $_GET['key'] !== $secretKey) {
 
 $now = date('Y-m-d H:i:s');
 
-// Initialize WebPush with your generated keys
+// Initialize WebPush with your keys
 $auth = [
     'VAPID' => [
         'subject'    => 'mailto:caresync.healthapp@gmail.com',
@@ -24,7 +25,9 @@ $auth = [
     ],
 ];
 
-$webPush = new WebPush($auth);
+// Provide an explicit client instance with a 30-second timeout to avoid discovery errors
+$httpClient = new GuzzleClient(['timeout' => 30]);
+$webPush = new WebPush($auth, [], 30, $httpClient);
 
 $query = "SELECT tasks.*, members.name AS member_name, users.id AS user_id, users.email AS user_email 
           FROM tasks
@@ -46,13 +49,13 @@ while ($task = $result->fetch_assoc()) {
     $taskId = (int)$task['id'];
     $userId = (int)$task['user_id'];
 
-    // 1. Dispatch Email
+    // 1. Dispatch Email via Google Apps Script
     $_POST['task_id'] = $taskId;
     ob_start();
     include 'send-email.php';
     $output = ob_get_clean();
 
-    // 2. Dispatch Background Web Push to user's registered devices
+    // 2. Dispatch Background Web Push
     $subRes = $conn->query("SELECT * FROM push_subscriptions WHERE user_id = $userId");
     if ($subRes && $subRes->num_rows > 0) {
         while ($subRow = $subRes->fetch_assoc()) {
