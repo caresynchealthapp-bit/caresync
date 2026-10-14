@@ -17,39 +17,43 @@ if (!$dbconn) {
 pg_query($dbconn, "SET TIME ZONE 'Asia/Colombo'");
 
 // Wrapper class so your existing index.php and login.php queries work without modification
-class DBWrapper {
-    private $conn;
-    public function __construct($c) { $this->conn = $c; }
+if (!class_exists('DBWrapper')) {
+    class DBWrapper {
+        private $conn;
+        public function __construct($c) { $this->conn = $c; }
 
-    public function query($sql) {
-        $res = pg_query($this->conn, $sql);
-        if (!$res) {
-            die("Query error: " . pg_last_error($this->conn));
+        public function query($sql) {
+            $res = pg_query($this->conn, $sql);
+            if (!$res) {
+                die("Query error: " . pg_last_error($this->conn));
+            }
+            return new ResultWrapper($res);
         }
-        return new ResultWrapper($res);
-    }
 
-    public function real_escape_string($str) {
-        return pg_escape_string($this->conn, $str);
+        public function real_escape_string($str) {
+            return pg_escape_string($this->conn, $str);
+        }
     }
 }
 
-class ResultWrapper {
-    private $res;
-    public $num_rows;
+if (!class_exists('ResultWrapper')) {
+    class ResultWrapper {
+        private $res;
+        public $num_rows;
 
-    public function __construct($r) {
-        $this->res = $r;
-        $this->num_rows = pg_num_rows($r);
-    }
+        public function __construct($r) {
+            $this->res = $r;
+            $this->num_rows = pg_num_rows($r);
+        }
 
-    public function fetch_assoc() {
-        return pg_fetch_assoc($this->res);
-    }
+        public function fetch_assoc() {
+            return pg_fetch_assoc($this->res);
+        }
 
-    public function data_seek($row) {
-        if ($this->num_rows > 0) {
-            pg_result_seek($this->res, $row);
+        public function data_seek($row) {
+            if ($this->num_rows > 0) {
+                pg_result_seek($this->res, $row);
+            }
         }
     }
 }

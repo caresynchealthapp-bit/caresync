@@ -40,6 +40,8 @@ async function registerPushNotifications() {
         const data = await res.json();
         if (data.status === 'success') {
             createToast("Success", "Background notifications enabled!");
+        } else {
+            console.error("Failed to save push subscription on server:", data);
         }
     } catch (err) {
         console.error("Push registration error:", err);
@@ -90,8 +92,8 @@ function closeMobileMenu(e) {
     if (sidebar) sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('open');
 }
-// --- 2. NOTIFICATION SYSTEM ---
 
+// --- 2. NOTIFICATION SYSTEM ---
 function playDing() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -154,7 +156,7 @@ function triggerAlert(task) {
     }
     
     // Send email via backend
-    if (task.id) {
+    if (task.id && task.id !== 'test') {
         const formData = new FormData();
         formData.append('task_id', task.id);
 
@@ -214,38 +216,14 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', closeMobileMenu);
     }
 
-    // 2. Register Background Push Notifications when Bell is clicked
+    // 2. Connect bell buttons exclusively to register for background push
     document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             registerPushNotifications();
         });
     });
 
-    // Initial task check and polling for in-app alert banners
-    checkTasks();
-    setInterval(checkTasks, 10000);
-
-    // 2. Request Notification Permission
-    function requestPerm() {
-        if ('Notification' in window && Notification.permission !== 'granted') {
-            Notification.requestPermission();
-        }
-    }
-
-    // Connect both desktop and mobile bell buttons
-    document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            requestPerm();
-            triggerAlert({
-                id: 'test',
-                member_name: "Test User",
-                title: "System Check",
-                instructions: "Notifications are working!"
-            });
-        });
-    });
-
-    // Initial check and periodic polling every 10 seconds
+    // 3. Initial check and periodic polling every 10 seconds for tab-open alerts
     checkTasks();
     setInterval(checkTasks, 10000);
 });
