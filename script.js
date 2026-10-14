@@ -1,16 +1,26 @@
-// --- 1. VIEW SWITCHING LOGIC ---
+// --- 1. VIEW SWITCHING & MOBILE DRAWER LOGIC ---
 function switchView(viewId, element, pageTitle) {
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => item.classList.remove('active'));
-    element.classList.add('active');
+    if (element) element.classList.add('active');
 
     const views = document.querySelectorAll('.view-section');
     views.forEach(view => view.classList.remove('active'));
-    document.getElementById(viewId).classList.add('active');
+    
+    const target = document.getElementById(viewId);
+    if (target) target.classList.add('active');
 
-    if(pageTitle) {
-        document.getElementById('page-title').innerText = pageTitle;
+    if (pageTitle) {
+        const titleElem = document.getElementById('page-title');
+        if (titleElem) titleElem.innerText = pageTitle;
     }
+}
+
+function closeMobileMenu() {
+    const sidebar = document.getElementById('app-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
 }
 
 // --- 2. NOTIFICATION SYSTEM ---
@@ -29,104 +39,139 @@ function playDing() {
         osc.start();
         osc.stop(ctx.currentTime + 1);
     } catch(e) { 
-        console.error("Audio failed to play", e); 
+        console.warn("Audio autoplay blocked or failed", e); 
     }
 }
 
 function createToast(title, body) {
     const container = document.getElementById('toast-container');
-    if(!container) return;
+    if (!container) return;
     
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `
-        <i class="fas fa-bell" style="color: var(--danger); font-size: 24px;"></i>
+        <i class="fas fa-bell" style="color: var(--danger, #ef4444); font-size: 20px; margin-right: 12px;"></i>
         <div>
-            <h4 style="margin: 0; margin-bottom: 4px; color: #1e293b;">${title}</h4>
+            <h4 style="margin: 0 0 4px; color: #1e293b; font-size: 14px;">${title}</h4>
             <p style="margin: 0; font-size: 13px; color: #64748b;">${body}</p>
         </div>
     `;
     container.appendChild(toast);
     
+    // Auto-remove after 8 seconds
     setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
+        toast.style.transform = 'translateY(-10px)';
         setTimeout(() => toast.remove(), 300);
-    }, 10000);
+    }, 8000);
 }
 
 function triggerAlert(task) {
-    const title = `Time for ${task.member_name}'s Task`;
-    const body = `${task.title} - ${task.instructions}`;
+    const title = `Time for ${task.member_name || 'Family'}'s Task`;
+    const body = `${task.title || 'Medicine/Clinic'} - ${task.instructions || 'No instructions'}`;
 
     playDing();
     createToast(title, body);
 
-    if (Notification.permission === 'granted') {
-        new Notification(title, { body: body });
+    // Browser Notification API
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            new Notification(title, { 
+                body: body,
+                icon: 'Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg'
+            });
+        } catch(e) {
+            console.warn("Native notification blocked:", e);
+        }
     }
     
-    // NEW: Fire an asynchronous request to send the email
-    const formData = new FormData();
-    formData.append('task_id', task.id);
+    // Send email via backend
+    if (task.id) {
+        const formData = new FormData();
+        formData.append('task_id', task.id);
 
-    // FIXED: Changed hyphen to underscore to match your file exactly
-    fetch('send-email.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.text())
-    .then(data => console.log("CareSync Email Status:", data))
-    .catch(error => console.error("Error triggering email:", error));
+        fetch('send-email.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => console.log("CareSync Email Status:", data))
+        .catch(error => console.error("Error triggering email:", error));
+    }
 }
 
+// In-memory set + localStorage backup to guarantee zero duplicate toasts
+const localAlertedIds = new Set();
+
 function checkTasks() {
-    if(typeof todayTasks === 'undefined') return;
+    if (typeof todayTasks === 'undefined' || !Array.isArray(todayTasks)) return;
 
     const now = new Date();
     
     todayTasks.forEach(task => {
-        // FIX: Replaced space with 'T' to ensure all browsers read the date correctly
+        if (!task.schedule_time || !task.id) return;
+
+        // Standardize date parsing: replace space with 'T' or slash for cross-browser support
         const safeDateString = task.schedule_time.replace(' ', 'T'); 
         const taskTime = new Date(safeDateString);
         
         if (now >= taskTime) {
             const storageKey = 'notified_' + task.id;
-            if (!localStorage.getItem(storageKey)) {
+            const alreadyNotified = localAlertedIds.has(task.id) || localStorage.getItem(storageKey);
+
+            if (!alreadyNotified) {
+                // Mark IMMEDIATELY to prevent multiple firings
+                localAlertedIds.add(task.id);
+                try {
+                    localStorage.setItem(storageKey, 'true');
+                } catch(e) {}
+
                 triggerAlert(task);
-                localStorage.setItem(storageKey, 'true'); 
             }
         }
     });
 }
 
-// --- 3. INITIALIZATION & TEST BUTTON ---
+// --- 3. INITIALIZATION & LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // Request permission immediately when the page loads
-    if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        Notification.requestPermission();
-    }
+    // 1. Mobile Sidebar Drawer Controls
+    const menuBtn = document.getElementById('menu-toggle-btn');
+    const sidebar = document.getElementById('app-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
 
-    // Connect the Bell Icon to a manual test function!
-    const bellBtn = document.querySelector('.notification-btn');
-    if(bellBtn) {
-        bellBtn.addEventListener('click', () => {
-            // Ask for permission if they haven't given it yet
-            if (Notification.permission !== 'granted') {
-                Notification.requestPermission();
-            }
-            
-            // Fire a fake alert to test the system
-            triggerAlert({
-                member_name: "Test User",
-                title: "System Check",
-                instructions: "Notifications are working perfectly!"
-            });
+    if (menuBtn && sidebar) {
+        menuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('open');
         });
     }
 
-    // Start checking the clock
+    if (overlay) {
+        overlay.addEventListener('click', closeMobileMenu);
+    }
+
+    // 2. Request Notification Permission
+    function requestPerm() {
+        if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+    }
+
+    // Connect both desktop and mobile bell buttons
+    document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            requestPerm();
+            triggerAlert({
+                id: 'test',
+                member_name: "Test User",
+                title: "System Check",
+                instructions: "Notifications are working!"
+            });
+        });
+    });
+
+    // Initial check and periodic polling every 10 seconds
     checkTasks();
-    setInterval(checkTasks, 5000); // Check every 5 seconds instead of 10
+    setInterval(checkTasks, 10000);
 });

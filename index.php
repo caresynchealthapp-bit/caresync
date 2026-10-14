@@ -129,10 +129,24 @@ function formatDateTime($datetime) {
 </head>
 <body>
 
-    <aside class="sidebar">
+    <!-- Mobile Top Header Bar -->
+    <header class="mobile-topbar">
+        <button id="menu-toggle-btn" class="menu-btn" aria-label="Toggle Navigation">
+            <i class="fas fa-bars"></i>
+        </button>
         <div class="brand"><i class="fas fa-heartbeat"></i> CareSync</div>
+        <button id="request-notif-btn" class="mobile-bell-btn" title="Enable System Notifications">
+            <i class="fas fa-bell"></i>
+        </button>
+    </header>
+
+    <!-- Overlay backdrop when menu is open on mobile -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="app-sidebar">
+        <div class="brand desktop-brand"><i class="fas fa-heartbeat"></i> CareSync</div>
         <ul class="nav-list" id="nav-list">
-            <li class="nav-item active" onclick="switchView('dashboard', this, 'Family Overview')">
+            <li class="nav-item active" onclick="switchView('dashboard', this, 'Family Overview'); closeMobileMenu();">
                 <i class="fas fa-chart-line"></i> Main Dashboard
             </li>
             <div class="section-title">Family Members</div>
@@ -140,7 +154,7 @@ function formatDateTime($datetime) {
             $members_result->data_seek(0); 
             if ($members_result->num_rows > 0) {
                 while($row = $members_result->fetch_assoc()) { 
-                    echo "<li class='nav-item' onclick=\"switchView('member-{$row['id']}', this, '{$row['name']}\'s Profile')\">
+                    echo "<li class='nav-item' onclick=\"switchView('member-{$row['id']}', this, '{$row['name']}\'s Profile'); closeMobileMenu();\">
                             <i class='fas fa-user-circle'></i> {$row['name']}
                           </li>";
                 }
@@ -148,7 +162,7 @@ function formatDateTime($datetime) {
                 echo '<li style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No members added.</li>';
             }
             ?>
-            <li class="nav-item" style="color: var(--primary); margin-top: 10px;" onclick="switchView('add-new-member', this, 'Add Family Member')">
+            <li class="nav-item" style="color: var(--primary); margin-top: 10px;" onclick="switchView('add-new-member', this, 'Add Family Member'); closeMobileMenu();">
                 <i class="fas fa-plus-circle"></i> Add Member
             </li>
         </ul>
@@ -158,7 +172,7 @@ function formatDateTime($datetime) {
         <header class="header">
             <h1 id="page-title">Family Overview</h1>
             <div class="user-controls">
-                <button class="notification-btn" style="background:none; border:none; font-size:22px; color:var(--text-gray); margin-right:20px; cursor:pointer;" title="Test Alert">
+                <button id="desktop-bell-btn" class="notification-btn" style="background:none; border:none; font-size:22px; color:var(--text-gray); margin-right:20px; cursor:pointer;" title="Enable Notifications">
                     <i class="fas fa-bell"></i>
                 </button>
                 <div class="user-profile">
@@ -182,7 +196,7 @@ function formatDateTime($datetime) {
                         <?php if (count($dashboard_today) > 0): ?>
                             <?php foreach($dashboard_today as $task): ?>
                                 <div class="task-item" style="border-left: 4px solid var(--danger);">
-                                    <div style="display: flex; justify-content: space-between;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                                         <div>
                                             <h4 style="margin-bottom: 5px;"><?php echo htmlspecialchars($task['member_name']); ?> - <?php echo htmlspecialchars($task['title']); ?></h4>
                                             <p style="font-size: 13px; color: var(--text-gray);"><i class="fas fa-clock"></i> <?php echo formatDateTime($task['schedule_time']); ?></p>
@@ -291,26 +305,22 @@ function formatDateTime($datetime) {
                             ?>
                         </div>
 
-                        <!-- Member's History Log (UPDATED FOR LATE TRACKING) -->
+                        <!-- Member's History Log -->
                         <div class="dash-column">
                             <h3><i class="fas fa-history text-success"></i> History Log</h3>
                             <?php 
                             $has_done = false;
                             foreach($this_member_tasks as $task) {
-                                // Check if it's ANY type of "Done" status
                                 if(strpos($task['status'], 'Done') !== false) {
                                     $has_done = true;
                                     echo "<div class='task-item task-done'>";
                                     echo "<h4>".htmlspecialchars($task['title'])."</h4>";
                                     
                                     if ($task['status'] == 'Done_Late') {
-                                        // Completed Late (Red)
                                         echo "<p style='font-size:13px; color: var(--danger); font-weight: 500;'><i class='fas fa-exclamation-triangle'></i> Completed late</p>";
                                     } else if ($task['status'] == 'Done_OnTime') {
-                                        // Completed On Time (Green)
                                         echo "<p style='font-size:13px; color: var(--success); font-weight: 500;'><i class='fas fa-check-circle'></i> Completed on time</p>";
                                     } else {
-                                        // Older tasks just marked "Done"
                                         echo "<p style='font-size:13px; color: var(--text-gray);'><i class='fas fa-check-circle'></i> Completed</p>";
                                     }
                                     
@@ -370,10 +380,8 @@ function formatDateTime($datetime) {
     <div id="toast-container" class="toast-container"></div>
 
     <script>
-        // Pass the "Today's Tasks" from PHP directly into a JavaScript variable!
         const todayTasks = <?php echo json_encode($dashboard_today); ?>;
     </script>
-
     <script src="script.js"></script>
 </body>
 </html>
