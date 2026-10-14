@@ -206,18 +206,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('menu-toggle-btn');
     const overlay = document.getElementById('sidebar-overlay');
 
-    document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
-        btn.addEventListener('click', registerPushNotifications);
-    });
-
     if (menuBtn) {
-        // Remove duplicate touchend; use click only
         menuBtn.addEventListener('click', toggleMobileMenu);
     }
 
     if (overlay) {
         overlay.addEventListener('click', closeMobileMenu);
     }
+
+    // 2. Register Background Push Notifications when Bell is clicked
+    document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            registerPushNotifications();
+        });
+    });
+
+    // Initial task check and polling for in-app alert banners
+    checkTasks();
+    setInterval(checkTasks, 10000);
+});
 
     // 2. Request Notification Permission
     function requestPerm() {

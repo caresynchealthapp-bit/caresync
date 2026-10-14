@@ -1,5 +1,5 @@
 <?php
-require 'db.php';
+require_once 'db.php';
 date_default_timezone_set('Asia/Colombo');
 
 // --- FIXED DATABASE QUERY: TARGET EXACT TASK ID FROM JAVASCRIPT ---
