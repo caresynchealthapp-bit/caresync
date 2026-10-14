@@ -1,0 +1,20 @@
+{
+  "name": "CareSync",
+  "short_name": "CareSync",
+  "start_url": "/index.php",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

@@ -1,3 +1,51 @@
+const PUBLIC_VAPID_KEY = 'BD73uAv-jsUeSLwDal94EqJmiOiVdfLD-O5-qFqUbQSGw0oEkb_Of7sNCT4R1W91ShPJtNw2SOeRM7FNNeaS3cg';
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function registerPushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        alert("Push notifications are not supported on this browser.");
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        const permission = await Notification.requestPermission();
+        
+        if (permission !== 'granted') {
+            alert("Notification permission was denied.");
+            return;
+        }
+
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+        });
+
+        const res = await fetch('save-subscription.php', {
+            method: 'POST',
+            body: JSON.stringify(subscription),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+        if (data.status === 'success') {
+            createToast("Success", "Background notifications enabled!");
+        }
+    } catch (err) {
+        console.error("Push registration error:", err);
+    }
+}
+
 // --- 1. VIEW SWITCHING & MOBILE DRAWER LOGIC ---
 function switchView(viewId, element, pageTitle) {
     const navItems = document.querySelectorAll('.nav-item');
@@ -16,12 +64,17 @@ function switchView(viewId, element, pageTitle) {
     }
 }
 
-// Touch-compatible drawer handlers for Android / iOS
+// Single debounce-safe toggle for Mobile Drawer
+let menuDebounce = false;
 function toggleMobileMenu(e) {
     if (e) {
         e.preventDefault();
         e.stopPropagation();
     }
+    if (menuDebounce) return;
+    menuDebounce = true;
+    setTimeout(() => { menuDebounce = false; }, 300);
+
     const sidebar = document.getElementById('app-sidebar');
     const overlay = document.getElementById('sidebar-overlay');
 
@@ -153,14 +206,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('menu-toggle-btn');
     const overlay = document.getElementById('sidebar-overlay');
 
+    document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
+        btn.addEventListener('click', registerPushNotifications);
+    });
+
     if (menuBtn) {
+        // Remove duplicate touchend; use click only
         menuBtn.addEventListener('click', toggleMobileMenu);
-        menuBtn.addEventListener('touchend', toggleMobileMenu, { passive: false });
     }
 
     if (overlay) {
         overlay.addEventListener('click', closeMobileMenu);
-        overlay.addEventListener('touchend', closeMobileMenu, { passive: false });
     }
 
     // 2. Request Notification Permission

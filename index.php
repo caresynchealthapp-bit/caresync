@@ -126,6 +126,7 @@ function formatDateTime($datetime) {
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     </style>
     <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
