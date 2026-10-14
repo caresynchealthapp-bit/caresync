@@ -18,7 +18,7 @@ async function registerPushNotifications() {
     }
 
     try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         const permission = await Notification.requestPermission();
         
         if (permission !== 'granted') {
@@ -26,6 +26,13 @@ async function registerPushNotifications() {
             return;
         }
 
+        // Unsubscribe old/mismatched tokens first
+        const existingSub = await registration.pushManager.getSubscription();
+        if (existingSub) {
+            await existingSub.unsubscribe();
+        }
+
+        // Generate clean subscription with the current VAPID key
         const subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
@@ -39,9 +46,9 @@ async function registerPushNotifications() {
 
         const data = await res.json();
         if (data.status === 'success') {
-            createToast("Success", "Background notifications enabled!");
+            createToast("Success", "Device registered for background alerts!");
         } else {
-            console.error("Failed to save push subscription on server:", data);
+            console.error("Save subscription error:", data);
         }
     } catch (err) {
         console.error("Push registration error:", err);

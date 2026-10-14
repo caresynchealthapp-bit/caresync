@@ -75,14 +75,17 @@ while ($task = $result->fetch_assoc()) {
 
         foreach ($webPush->flush() as $report) {
             $endpoint = $report->getEndpoint();
+            $shortUrl = substr($endpoint, 0, 42);
+
             if ($report->isSuccess()) {
-                echo " [Push Sent to: " . substr($endpoint, 0, 30) . "...] ";
+                echo "<br><span style='color:green'>[Push Sent to: {$shortUrl}...]</span>";
             } else {
-                echo " [Push Failed: {$report->getReason()} - " . substr($endpoint, 0, 30) . "...] ";
-                if ($report->isSubscriptionExpired()) {
-                    $cleanEndpoint = $conn->real_escape_string($endpoint);
-                    $conn->query("DELETE FROM push_subscriptions WHERE endpoint = '$cleanEndpoint'");
-                }
+                $reason = $report->getReason();
+                echo "<br><span style='color:red'>[Push Failed: {$reason} - {$shortUrl}...]</span>";
+                
+                // Remove expired or forbidden subscriptions automatically
+                $cleanEndpoint = $conn->real_escape_string($endpoint);
+                $conn->query("DELETE FROM push_subscriptions WHERE endpoint = '$cleanEndpoint'");
             }
         }
     }
