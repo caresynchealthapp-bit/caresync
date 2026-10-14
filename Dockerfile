@@ -1,8 +1,10 @@
 FROM php:8.2-apache
 
-# Install PostgreSQL libraries and PHP extension
-RUN apt-get update && apt-get install -y libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql pgsql
+# Install PostgreSQL libraries, GMP, and PHP extensions
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    libgmp-dev \
+    && docker-php-ext-install pdo pdo_pgsql pgsql gmp bcmath
 
 # Copy application files to Apache root
 COPY . /var/www/html/
