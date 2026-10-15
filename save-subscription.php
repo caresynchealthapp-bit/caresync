@@ -19,17 +19,14 @@ if (!isset($data['endpoint'], $data['keys']['p256dh'], $data['keys']['auth'])) {
     exit();
 }
 
-$user_id = (int)$_SESSION['user_id'];
+$user_id  = (int)$_SESSION['user_id'];
 $endpoint = $conn->real_escape_string($data['endpoint']);
-$p256dh = $conn->real_escape_string($data['keys']['p256dh']);
-$auth = $conn->real_escape_string($data['keys']['auth']);
+$p256dh   = $conn->real_escape_string($data['keys']['p256dh']);
+$auth     = $conn->real_escape_string($data['keys']['auth']);
 
-// Insert or update if device already registered
-$sql = "INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) 
-        VALUES ($user_id, '$endpoint', '$p256dh', '$auth')
-        ON CONFLICT (endpoint) DO UPDATE 
-        SET p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth";
+// Remove existing record for this endpoint if any, then insert
+$conn->query("DELETE FROM push_subscriptions WHERE endpoint = '$endpoint'");
+$conn->query("INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ($user_id, '$endpoint', '$p256dh', '$auth')");
 
-$conn->query($sql);
 echo json_encode(["status" => "success"]);
 ?>

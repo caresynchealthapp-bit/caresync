@@ -211,7 +211,6 @@ function checkTasks() {
 
 // --- 3. INITIALIZATION & LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Mobile Sidebar Drawer Controls
     const menuBtn = document.getElementById('menu-toggle-btn');
     const overlay = document.getElementById('sidebar-overlay');
 
@@ -223,14 +222,18 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', closeMobileMenu);
     }
 
-    // 2. Connect bell buttons exclusively to register for background push
+    // Connect both desktop and mobile bell buttons
     document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             registerPushNotifications();
         });
     });
 
-    // 3. Initial check and periodic polling every 10 seconds for tab-open alerts
+    // Automatically register if permission is already granted
+    if ('Notification' in window && Notification.permission === 'granted') {
+        registerPushNotifications();
+    }
+
     checkTasks();
     setInterval(checkTasks, 10000);
 });
