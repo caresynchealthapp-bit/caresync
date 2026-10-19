@@ -1,4 +1,13 @@
 <?php
+
+session_set_cookie_params([
+    'lifetime' => 31536000,
+    'path'     => '/',
+    'secure'   => true,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
+
 session_start();
 date_default_timezone_set('Asia/Colombo'); // Ensures the time check matches your local time
 

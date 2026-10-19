@@ -1,4 +1,12 @@
 <?php
+// Set persistent cookie lifetime (1 year) so sessions stay alive across browser restarts
+session_set_cookie_params([
+    'lifetime' => 31536000,
+    'path'     => '/',
+    'secure'   => true,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 session_start();
 require 'db.php';
 
@@ -6,38 +14,48 @@ $error_message = "";
 $success_message = "";
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
-    $name = $conn->real_escape_string($_POST['name']);
-    $email = $conn->real_escape_string($_POST['email']);
-    $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
 
     // 1. Check if passwords match
     if ($password !== $confirm_password) {
         $error_message = "Passwords do not match!";
-    } else {
-        // 2. Check if the email already exists in the database
-        $check_sql = "SELECT id FROM users WHERE email = '$email'";
-        $check_result = $conn->query($check_sql);
-
-        if ($check_result->num_rows > 0) {
-            $error_message = "An account with this email already exists.";
+    } 
+    // 2. Validate email format (e.g. catches missing @ or invalid syntax)
+    elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = "Email is incorrect. Please enter a valid email address.";
+    } 
+    else {
+        // 3. Verify the domain actually accepts emails via MX records
+        $domain = substr(strrchr($email, "@"), 1);
+        if (!checkdnsrr($domain, "MX")) {
+            $error_message = "Email is incorrect. The domain '@$domain' does not accept emails.";
         } else {
-            // 3. Encrypt the password securely
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $safe_email = $conn->real_escape_string($email);
 
-            // [FUTURE UPGRADE ROOM]: Here is where you would generate a random token
-            // and send a verification email using PHPMailer before inserting them as "active".
-            // For now, we will just register them directly.
+            // 4. Check if the email already exists in the database
+            $check_sql = "SELECT id FROM users WHERE email = '$safe_email'";
+            $check_result = $conn->query($check_sql);
 
-            // 4. Insert the new user into the database
-            $sql = "INSERT INTO users (name, email, password) VALUES ('$name', '$email', '$hashed_password')";
-            
-            if ($conn->query($sql) === TRUE) {
-                // Registration successful, send them to login page with a success flag
-                header("Location: login.php?registered=true");
-                exit();
+            if ($check_result && $check_result->num_rows > 0) {
+                $error_message = "An account with this email already exists.";
             } else {
-                $error_message = "Something went wrong. Please try again.";
+                // 5. Encrypt password and insert
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $safe_name = $conn->real_escape_string($name);
+
+                $sql = "INSERT INTO users (name, email, password) VALUES ('$safe_name', '$safe_email', '$hashed_password')";
+                $res = $conn->query($sql);
+                
+                // Fixed: Check truthiness of the returned ResultWrapper object, NOT === TRUE
+                if ($res) {
+                    header("Location: login.php?registered=true");
+                    exit();
+                } else {
+                    $error_message = "Something went wrong. Please try again.";
+                }
             }
         }
     }
@@ -83,18 +101,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             
             <?php if (!empty($error_message)): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo $error_message; ?>
+                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error_message); ?>
                 </div>
             <?php endif; ?>
 
             <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" name="name" placeholder="e.g. John Doe" required>
+                <input type="text" name="name" placeholder="e.g. John Doe" required value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
             </div>
 
             <div class="form-group">
                 <label>Email Address</label>
-                <input type="email" name="email" placeholder="email@example.com" required>
+                <input type="email" id="email" name="email" placeholder="email@example.com" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
             </div>
 
             <div class="form-group">

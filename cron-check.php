@@ -82,10 +82,7 @@ while ($task = $result->fetch_assoc()) {
             } else {
                 $reason = $report->getReason();
                 echo "<br><span style='color:red'>[Push Failed: {$reason} - {$shortUrl}...]</span>";
-                
-                // Remove expired or forbidden subscriptions automatically
-                $cleanEndpoint = $conn->real_escape_string($endpoint);
-                $conn->query("DELETE FROM push_subscriptions WHERE endpoint = '$cleanEndpoint'");
+                // Do NOT delete the row so your device stays registered forever
             }
         }
     }
