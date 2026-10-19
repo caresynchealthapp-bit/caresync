@@ -13,6 +13,29 @@ require 'db.php';
 $error_message = "";
 $success_message = "";
 
+function is_valid_email_domain($email) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $domain = strtolower(substr(strrchr($email, "@"), 1));
+
+    // Block common dummy and disposable temporary domains
+    $blacklisted_domains = [
+        'fake.com', 'test.com', 'example.com', 'tempmail.com', 
+        'mailinator.com', 'guerrillamail.com', '10minutemail.com', 
+        'throwawaymail.com', 'yopmail.com', 'sharklasers.com'
+    ];
+
+    if (in_array($domain, $blacklisted_domains)) {
+        return false;
+    }
+
+    // Trailing dot prevents Linux DNS resolver search domain appending in Docker
+    $fqdn = $domain . '.';
+    return checkdnsrr($fqdn, 'MX') || checkdnsrr($fqdn, 'A');
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -23,39 +46,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     if ($password !== $confirm_password) {
         $error_message = "Passwords do not match!";
     } 
-    // 2. Validate email format (e.g. catches missing @ or invalid syntax)
-    elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error_message = "Email is incorrect. Please enter a valid email address.";
+    // 2. Validate email structure and domain deliverability
+    elseif (!is_valid_email_domain($email)) {
+        $error_message = "Email is incorrect or inactive. Please enter a real email address.";
     } 
     else {
-        // 3. Verify the domain actually accepts emails via MX records
-        $domain = substr(strrchr($email, "@"), 1);
-        if (!checkdnsrr($domain, "MX")) {
-            $error_message = "Email is incorrect. The domain '@$domain' does not accept emails.";
+        $safe_email = $conn->real_escape_string($email);
+
+        // 3. Check if the email already exists in the database
+        $check_sql = "SELECT id FROM users WHERE email = '$safe_email'";
+        $check_result = $conn->query($check_sql);
+
+        if ($check_result && $check_result->num_rows > 0) {
+            $error_message = "An account with this email already exists.";
         } else {
-            $safe_email = $conn->real_escape_string($email);
+            // 4. Encrypt password and insert
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $safe_name = $conn->real_escape_string($name);
 
-            // 4. Check if the email already exists in the database
-            $check_sql = "SELECT id FROM users WHERE email = '$safe_email'";
-            $check_result = $conn->query($check_sql);
-
-            if ($check_result && $check_result->num_rows > 0) {
-                $error_message = "An account with this email already exists.";
+            $sql = "INSERT INTO users (name, email, password) VALUES ('$safe_name', '$safe_email', '$hashed_password')";
+            $res = $conn->query($sql);
+            
+            if ($res) {
+                header("Location: login.php?registered=true");
+                exit();
             } else {
-                // 5. Encrypt password and insert
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $safe_name = $conn->real_escape_string($name);
-
-                $sql = "INSERT INTO users (name, email, password) VALUES ('$safe_name', '$safe_email', '$hashed_password')";
-                $res = $conn->query($sql);
-                
-                // Fixed: Check truthiness of the returned ResultWrapper object, NOT === TRUE
-                if ($res) {
-                    header("Location: login.php?registered=true");
-                    exit();
-                } else {
-                    $error_message = "Something went wrong. Please try again.";
-                }
+                $error_message = "Something went wrong. Please try again.";
             }
         }
     }
