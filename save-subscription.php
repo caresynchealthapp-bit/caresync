@@ -24,8 +24,10 @@ $endpoint = $conn->real_escape_string($data['endpoint']);
 $p256dh   = $conn->real_escape_string($data['keys']['p256dh']);
 $auth     = $conn->real_escape_string($data['keys']['auth']);
 
-// Remove existing record for this endpoint if any, then insert
-$conn->query("DELETE FROM push_subscriptions WHERE endpoint = '$endpoint'");
+// Remove old/expired tokens for this user so only the current device is kept
+$conn->query("DELETE FROM push_subscriptions WHERE user_id = $user_id OR endpoint = '$endpoint'");
+
+// Insert the single active subscription
 $conn->query("INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES ($user_id, '$endpoint', '$p256dh', '$auth')");
 
 echo json_encode(["status" => "success"]);

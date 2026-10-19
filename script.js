@@ -11,32 +11,34 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
-async function registerPushNotifications() {
+async function registerPushNotifications(force = false) {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        alert("Push notifications are not supported on this browser.");
+        console.warn("Push notifications are not supported on this browser.");
+        return;
+    }
+
+    // If already synced, don't re-subscribe on refresh unless user clicks the bell
+    if (!force && localStorage.getItem('caresync_push_synced') === 'true') {
         return;
     }
 
     try {
         const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        await navigator.serviceWorker.ready;
+
         const permission = await Notification.requestPermission();
-        
         if (permission !== 'granted') {
-            alert("Notification permission was denied.");
             return;
         }
 
-        // Unsubscribe old/mismatched tokens first
-        const existingSub = await registration.pushManager.getSubscription();
-        if (existingSub) {
-            await existingSub.unsubscribe();
-        }
+        let subscription = await registration.pushManager.getSubscription();
 
-        // Generate clean subscription with the current VAPID key
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
-        });
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+            });
+        }
 
         const res = await fetch('save-subscription.php', {
             method: 'POST',
@@ -46,9 +48,10 @@ async function registerPushNotifications() {
 
         const data = await res.json();
         if (data.status === 'success') {
-            createToast("Success", "Device registered for background alerts!");
-        } else {
-            console.error("Save subscription error:", data);
+            localStorage.setItem('caresync_push_synced', 'true');
+            if (force) {
+                createToast("Success", "Device registered for background alerts!");
+            }
         }
     } catch (err) {
         console.error("Push registration error:", err);
@@ -73,7 +76,6 @@ function switchView(viewId, element, pageTitle) {
     }
 }
 
-// Single debounce-safe toggle for Mobile Drawer
 let menuDebounce = false;
 function toggleMobileMenu(e) {
     if (e) {
@@ -134,7 +136,6 @@ function createToast(title, body) {
     `;
     container.appendChild(toast);
     
-    // Auto-remove after 8 seconds
     setTimeout(() => {
         toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         toast.style.opacity = '0';
@@ -150,7 +151,6 @@ function triggerAlert(task) {
     playDing();
     createToast(title, body);
 
-    // Browser Notification API
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             new Notification(title, { 
@@ -162,7 +162,6 @@ function triggerAlert(task) {
         }
     }
     
-    // Send email via backend
     if (task.id && task.id !== 'test') {
         const formData = new FormData();
         formData.append('task_id', task.id);
@@ -177,7 +176,6 @@ function triggerAlert(task) {
     }
 }
 
-// In-memory set + localStorage backup to guarantee zero duplicate toasts
 const localAlertedIds = new Set();
 
 function checkTasks() {
@@ -188,7 +186,6 @@ function checkTasks() {
     todayTasks.forEach(task => {
         if (!task.schedule_time || !task.id) return;
 
-        // Standardize date parsing: replace space with 'T' or slash for cross-browser support
         const safeDateString = task.schedule_time.replace(' ', 'T'); 
         const taskTime = new Date(safeDateString);
         
@@ -197,7 +194,6 @@ function checkTasks() {
             const alreadyNotified = localAlertedIds.has(task.id) || localStorage.getItem(storageKey);
 
             if (!alreadyNotified) {
-                // Mark IMMEDIATELY to prevent multiple firings
                 localAlertedIds.add(task.id);
                 try {
                     localStorage.setItem(storageKey, 'true');
@@ -214,24 +210,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuBtn = document.getElementById('menu-toggle-btn');
     const overlay = document.getElementById('sidebar-overlay');
 
-    if (menuBtn) {
-        menuBtn.addEventListener('click', toggleMobileMenu);
-    }
+    if (menuBtn) menuBtn.addEventListener('click', toggleMobileMenu);
+    if (overlay) overlay.addEventListener('click', closeMobileMenu);
 
-    if (overlay) {
-        overlay.addEventListener('click', closeMobileMenu);
-    }
-
-    // Connect both desktop and mobile bell buttons
+    // Clicking the bell forces re-registration
     document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            registerPushNotifications();
+            registerPushNotifications(true);
         });
     });
 
-    // Automatically register if permission is already granted
+    // Check on load (will not duplicate if already synced)
     if ('Notification' in window && Notification.permission === 'granted') {
-        registerPushNotifications();
+        registerPushNotifications(false);
     }
 
     checkTasks();
