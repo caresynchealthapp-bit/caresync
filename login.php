@@ -1,5 +1,4 @@
 <?php
-
 session_set_cookie_params([
     'lifetime' => 31536000,
     'path'     => '/',
@@ -7,43 +6,40 @@ session_set_cookie_params([
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
-
 session_start();
 require 'db.php';
 
 $error_message = "";
 $success_message = "";
 
-// Check if they just came from a successful registration
-if (isset($_GET['registered']) && $_GET['registered'] == 'true') {
-    $success_message = "Account created successfully! You can now log in.";
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
-    // 1. Strip hidden spaces and enforce lowercase
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
-
     $safe_email = $conn->real_escape_string($email);
 
-    // 2. Query ignoring casing and spaces on the database record as well
+    // Flexible query checking lowercase and trimmed values
     $sql = "SELECT * FROM users WHERE LOWER(TRIM(email)) = '$safe_email'";
     $result = $conn->query($sql);
 
-    if ($result && $result->num_rows > 0) {
+    // DEBUG CHECK: If no user found, dump the existing users from that database
+    if ($result->num_rows === 0) {
+        $dump_res = $conn->query("SELECT id, email FROM users LIMIT 10");
+        $found_emails = [];
+        while ($r = $dump_res->fetch_assoc()) {
+            $found_emails[] = "'" . $r['email'] . "'";
+        }
+        $list = implode(", ", $found_emails);
+        $error_message = "No account found for: [$email]. Registered emails in this database: [" . ($list ?: 'NONE - TABLE IS EMPTY') . "]";
+    } else {
         $user = $result->fetch_assoc();
-        
         if (password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
-            
             header("Location: index.php");
             exit();
         } else {
             $error_message = "Incorrect password.";
         }
-    } else {
-        $error_message = "No account found with this email.";
     }
 }
 ?>
