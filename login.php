@@ -19,14 +19,18 @@ if (isset($_GET['registered']) && $_GET['registered'] == 'true') {
     $success_message = "Account created successfully! You can now log in.";
 }
 
-if (isset($_POST['login'])) {
-    $email = $conn->real_escape_string($_POST['email']);
-    $password = $_POST['password'];
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
+    // 1. Strip hidden spaces and enforce lowercase
+    $email = strtolower(trim($_POST['email'] ?? ''));
+    $password = $_POST['password'] ?? '';
 
-    $sql = "SELECT * FROM users WHERE email = '$email'";
+    $safe_email = $conn->real_escape_string($email);
+
+    // 2. Query ignoring casing and spaces on the database record as well
+    $sql = "SELECT * FROM users WHERE LOWER(TRIM(email)) = '$safe_email'";
     $result = $conn->query($sql);
 
-    if ($result->num_rows > 0) {
+    if ($result && $result->num_rows > 0) {
         $user = $result->fetch_assoc();
         
         if (password_verify($password, $user['password'])) {
@@ -83,20 +87,20 @@ if (isset($_POST['login'])) {
             
             <?php if (!empty($error_message)): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?php echo $error_message; ?>
+                    <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error_message); ?>
                 </div>
             <?php endif; ?>
 
             <!-- Show success message if they just registered -->
             <?php if (!empty($success_message)): ?>
                 <div class="success-message">
-                    <i class="fas fa-check-circle"></i> <?php echo $success_message; ?>
+                    <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
                 </div>
             <?php endif; ?>
 
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="admin@family.com" required>
+                <input type="email" id="email" name="email" placeholder="admin@family.com" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
             </div>
 
             <div class="form-group">
