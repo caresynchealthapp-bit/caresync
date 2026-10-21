@@ -85,8 +85,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
 }
 
 // --- DATA FETCHING ---
-$members_query = "SELECT * FROM members WHERE user_id = '$user_id'";
-$members_result = $conn->query($members_query);
+$members_list = [];
+$members_res = $conn->query("SELECT * FROM members WHERE user_id = '$user_id' ORDER BY id ASC");
+if ($members_res) {
+    while ($m = $members_res->fetch_assoc()) {
+        $members_list[] = $m;
+    }
+}
 
 $tasks_query = "SELECT tasks.*, members.name AS member_name 
                 FROM tasks 
@@ -213,18 +218,17 @@ function formatDateTime($datetime) {
                 <i class="fas fa-chart-line"></i> Main Dashboard
             </li>
             <div class="section-title">Family Members</div>
-            <?php 
-            $members_result->data_seek(0); 
-            if ($members_result->num_rows > 0) {
-                while($row = $members_result->fetch_assoc()) { 
-                    echo "<li class='nav-item' onclick=\"switchView('member-{$row['id']}', this, '{$row['name']}\'s Profile'); closeMobileMenu();\">
-                            <i class='fas fa-user-circle'></i> {$row['name']}
-                          </li>";
+                <?php 
+                    if (count($members_list) > 0) {
+                        foreach ($members_list as $row) { 
+                            echo "<li class='nav-item' onclick=\"switchView('member-{$row['id']}', this, '" . addslashes($row['name']) . "\'s Profile'); closeMobileMenu();\">
+                                <i class='fas fa-user-circle'></i> " . htmlspecialchars($row['name']) . "
+                                </li>";
+                    }
+                } else {
+                    echo '<li style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No members added.</li>';
                 }
-            } else {
-                echo '<li style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No members added.</li>';
-            }
-            ?>
+                ?>
             <li class="nav-item" style="color: var(--primary); margin-top: 10px;" onclick="switchView('add-new-member', this, 'Add Family Member'); closeMobileMenu();">
                 <i class="fas fa-plus-circle"></i> Add Member
             </li>
@@ -325,14 +329,13 @@ function formatDateTime($datetime) {
                 </div>
             </div>
 
-            <!-- 2. MEMBER PROFILE VIEWS -->
-            <?php 
-            $members_result->data_seek(0); 
-            while($row = $members_result->fetch_assoc()) { 
-                $member_id = $row['id'];
-                $member_name = htmlspecialchars($row['name']);
-                $this_member_tasks = isset($member_tasks[$member_id]) ? $member_tasks[$member_id] : [];
-            ?>
+    <!-- 2. MEMBER PROFILE VIEWS -->
+<?php 
+foreach ($members_list as $row) { 
+    $member_id = $row['id'];
+    $member_name = htmlspecialchars($row['name']);
+    $this_member_tasks = isset($member_tasks[$member_id]) ? $member_tasks[$member_id] : [];
+?>
                 <div id="member-<?php echo $member_id; ?>" class="view-section">
                     
                     <div class="member-profile-header">
