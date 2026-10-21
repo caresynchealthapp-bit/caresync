@@ -55,29 +55,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_task'])) {
     exit();
 }
 
-// --- 4. HANDLE MARK AS DONE (UPDATED FOR LATE CHECK) ---
+// --- 4. HANDLE MARK AS DONE (FIXED FOR POSTGRESQL) ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
     $task_id = (int)$_POST['mark_done_id'];
     
-    // First, fetch the scheduled time of this specific task
-    $check_sql = "SELECT schedule_time FROM tasks WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id')";
+    // First, fetch the scheduled time of this specific task directly
+    $check_sql = "SELECT schedule_time FROM tasks WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id') LIMIT 1";
     $result = $conn->query($check_sql);
+    $row = ($result) ? $result->fetch_assoc() : null;
     
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
+    if ($row) {
         $scheduled_time = $row['schedule_time'];
-        $current_time = date('Y-m-d H:i'); // Get the exact time right now
+        $current_time = date('Y-m-d H:i'); 
         
         // Compare times to determine if it's late
-        if ($current_time > $scheduled_time) {
-            $new_status = 'Done_Late';
-        } else {
-            $new_status = 'Done_OnTime';
-        }
+        $new_status = ($current_time > $scheduled_time) ? 'Done_Late' : 'Done_OnTime';
         
         // Update the task with the new accurate status
-        $update_sql = "UPDATE tasks SET status='$new_status' WHERE id=$task_id";
-        $conn->query($update_sql);
+        $conn->query("UPDATE tasks SET status='$new_status' WHERE id=$task_id");
     }
     
     header("Location: index.php");
@@ -85,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
 }
 
 // --- DATA FETCHING ---
+// 1. Fetch Members reliably into an array
 $members_list = [];
 $members_res = $conn->query("SELECT * FROM members WHERE user_id = '$user_id' ORDER BY id ASC");
 if ($members_res) {
@@ -93,6 +89,7 @@ if ($members_res) {
     }
 }
 
+// 2. Fetch Tasks
 $tasks_query = "SELECT tasks.*, members.name AS member_name 
                 FROM tasks 
                 JOIN members ON tasks.member_id = members.id 
@@ -100,32 +97,38 @@ $tasks_query = "SELECT tasks.*, members.name AS member_name
                 ORDER BY tasks.schedule_time ASC";
 $all_tasks_result = $conn->query($tasks_query);
 
-// Fetch available medicines from Supabase (works for schema or public table)
-// Fetch available medicines from the separate PharmaConnect Supabase Project
-$medicines_list = [];
-if (isset($pharma_conn) && $pharma_conn) {
-    $med_query = $pharma_conn->query("SELECT name FROM pharmaconnect_db.medicines ORDER BY name ASC");
-    if ($med_query && $med_query->num_rows > 0) {
-        while ($m = $med_query->fetch_assoc()) {
-            $medicines_list[] = $m['name'];
-        }
-    }
-}
-
 $today_str = date('Y-m-d');
 $dashboard_today = [];
 $dashboard_upcoming = [];
 $member_tasks = [];
 
-while($task = $all_tasks_result->fetch_assoc()) {
-    $task_date = substr($task['schedule_time'], 0, 10);
-    $member_tasks[$task['member_id']][] = $task;
-    
-    if ($task['status'] == 'Pending') {
-        if ($task_date <= $today_str) {
-            $dashboard_today[] = $task;
-        } else {
-            $dashboard_upcoming[] = $task;
+if ($all_tasks_result) {
+    while($task = $all_tasks_result->fetch_assoc()) {
+        $task_date = substr($task['schedule_time'], 0, 10);
+        $member_tasks[$task['member_id']][] = $task;
+        
+        if ($task['status'] == 'Pending') {
+            if ($task_date <= $today_str) {
+                $dashboard_today[] = $task;
+            } else {
+                $dashboard_upcoming[] = $task;
+            }
+        }
+    }
+}
+
+// 3. Fetch Medicines from PharmaConnect Supabase Project
+$medicines_list = [];
+$target_conn = (isset($pharma_conn) && $pharma_conn) ? $pharma_conn : $conn;
+$med_query = @$target_conn->query("SELECT name FROM pharmaconnect_db.medicines ORDER BY name ASC");
+if (!$med_query) {
+    // Fallback if public schema is used
+    $med_query = @$target_conn->query("SELECT name FROM medicines ORDER BY name ASC");
+}
+if ($med_query) {
+    while ($med_row = $med_query->fetch_assoc()) {
+        if (!empty($med_row['name'])) {
+            $medicines_list[] = $med_row['name'];
         }
     }
 }
@@ -142,55 +145,50 @@ function formatDateTime($datetime) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareSync | Family Health Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
     <style>
         .form-card { background: var(--white); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; margin-bottom: 24px; }
-        .form-group { margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; position: relative; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; }
         .btn-primary { background-color: var(--primary); color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        /* Styling for the autocomplete dropdown */
-    .med-suggestions-box {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 130px; /* leaves room beside Find Medicine button */
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 9999;
-        margin-top: 4px;
-    }
 
-    .med-suggestion-item {
-        padding: 10px 14px;
-        font-size: 14px;
-        color: #1e293b;
-        cursor: pointer;
-        border-bottom: 1px solid #f1f5f9;
-        transition: background 0.15s ease;
-    }
-
-    .med-suggestion-item:last-child {
-        border-bottom: none;
-    }
-
-    .med-suggestion-item:hover {
-        background-color: #f0fdf4;
-        color: #15803d;
-        font-weight: 500;
-    }
-
-    .med-suggestion-empty {
-        padding: 12px 14px;
-        font-size: 13px;
-        color: #94a3b8;
-        font-style: italic;
-    }
+        /* Autocomplete dropdown styles */
+        .med-suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 9999;
+            margin-top: 4px;
+        }
+        .med-suggestion-item {
+            padding: 10px 14px;
+            font-size: 14px;
+            color: #1e293b;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s ease;
+        }
+        .med-suggestion-item:last-child { border-bottom: none; }
+        .med-suggestion-item:hover {
+            background-color: #eff6ff;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .med-suggestion-empty {
+            padding: 12px 14px;
+            font-size: 13px;
+            color: #94a3b8;
+            font-style: italic;
+        }
     </style>
     <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
     <link rel="manifest" href="manifest.json">
@@ -199,13 +197,13 @@ function formatDateTime($datetime) {
 
     <!-- Mobile Top Header Bar -->
     <header class="mobile-topbar">
-    <button id="menu-toggle-btn" class="menu-btn" aria-label="Toggle Navigation" onclick="toggleMobileMenu(event)">
-        <i class="fas fa-bars"></i>
-    </button>
-    <div class="brand"><i class="fas fa-heartbeat"></i> CareSync</div>
-    <button id="request-notif-btn" class="mobile-bell-btn" title="Enable System Notifications">
-        <i class="fas fa-bell"></i>
-    </button>
+        <button id="menu-toggle-btn" class="menu-btn" aria-label="Toggle Navigation" onclick="toggleMobileMenu(event)">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="brand"><i class="fas fa-heartbeat"></i> CareSync</div>
+        <button id="request-notif-btn" class="mobile-bell-btn" title="Enable System Notifications">
+            <i class="fas fa-bell"></i>
+        </button>
     </header>
 
     <!-- Overlay backdrop when menu is open on mobile -->
@@ -218,17 +216,17 @@ function formatDateTime($datetime) {
                 <i class="fas fa-chart-line"></i> Main Dashboard
             </li>
             <div class="section-title">Family Members</div>
-                <?php 
-                    if (count($members_list) > 0) {
-                        foreach ($members_list as $row) { 
-                            echo "<li class='nav-item' onclick=\"switchView('member-{$row['id']}', this, '" . addslashes($row['name']) . "\'s Profile'); closeMobileMenu();\">
-                                <i class='fas fa-user-circle'></i> " . htmlspecialchars($row['name']) . "
-                                </li>";
-                    }
-                } else {
-                    echo '<li style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No members added.</li>';
+            <?php 
+            if (count($members_list) > 0) {
+                foreach($members_list as $row) { 
+                    echo "<li class='nav-item' onclick=\"switchView('member-{$row['id']}', this, '" . addslashes($row['name']) . "\'s Profile'); closeMobileMenu();\">
+                            <i class='fas fa-user-circle'></i> " . htmlspecialchars($row['name']) . "
+                          </li>";
                 }
-                ?>
+            } else {
+                echo '<li style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No members added.</li>';
+            }
+            ?>
             <li class="nav-item" style="color: var(--primary); margin-top: 10px;" onclick="switchView('add-new-member', this, 'Add Family Member'); closeMobileMenu();">
                 <i class="fas fa-plus-circle"></i> Add Member
             </li>
@@ -329,13 +327,13 @@ function formatDateTime($datetime) {
                 </div>
             </div>
 
-    <!-- 2. MEMBER PROFILE VIEWS -->
-<?php 
-foreach ($members_list as $row) { 
-    $member_id = $row['id'];
-    $member_name = htmlspecialchars($row['name']);
-    $this_member_tasks = isset($member_tasks[$member_id]) ? $member_tasks[$member_id] : [];
-?>
+            <!-- 2. MEMBER PROFILE VIEWS -->
+            <?php 
+            foreach($members_list as $row) { 
+                $member_id = $row['id'];
+                $member_name = htmlspecialchars($row['name']);
+                $this_member_tasks = isset($member_tasks[$member_id]) ? $member_tasks[$member_id] : [];
+            ?>
                 <div id="member-<?php echo $member_id; ?>" class="view-section">
                     
                     <div class="member-profile-header">
@@ -406,34 +404,35 @@ foreach ($members_list as $row) {
                             <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
                             
                             <div class="two-col">
-    <div class="form-group">
-        <label>Task Type</label>
-        <select name="task_type" class="task-type-select" onchange="handleTaskTypeChange(this)" required>
-            <option value="Medicine">Medicine</option>
-            <option value="Clinic Date">Clinic Date</option>
-        </select>
-    </div>
-    <div class="form-group" style="position: relative;">
-        <label class="title-label">Name / Title</label>
-        <div style="display: flex; gap: 8px;">
-            <input type="text" 
-                   name="title" 
-                   class="task-title-input" 
-                   required 
-                   placeholder="e.g. Metformin 500mg" 
-                   autocomplete="off"
-                   oninput="handleMedicineInput(this)">
-            <button type="button" 
-                    class="btn-primary find-med-btn" 
-                    onclick="triggerFindMedicine(this)" 
-                    style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
-                <i class="fas fa-search"></i> Find Medicine
-            </button>
-        </div>
-        <!-- Dropdown suggestion list -->
-        <div class="med-suggestions-box" style="display: none;"></div>
-    </div>
-</div>
+                                <div class="form-group">
+                                    <label>Task Type</label>
+                                    <select name="task_type" class="task-type-select" onchange="handleTaskTypeChange(this)" required>
+                                        <option value="Medicine">Medicine</option>
+                                        <option value="Clinic Date">Clinic Date</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="title-label">Name / Title</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="text" 
+                                               name="title" 
+                                               class="task-title-input" 
+                                               required 
+                                               placeholder="e.g. Metformin 500mg" 
+                                               autocomplete="off"
+                                               oninput="handleMedicineInput(this)">
+                                        <button type="button" 
+                                                class="btn-primary find-med-btn" 
+                                                onclick="triggerFindMedicine(this)" 
+                                                style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
+                                            <i class="fas fa-search"></i> Find Medicine
+                                        </button>
+                                    </div>
+                                    <!-- Suggestions Container -->
+                                    <div class="med-suggestions-box" style="display: none;"></div>
+                                </div>
+                            </div>
                             
                             <div class="two-col">
                                 <div class="form-group">
@@ -463,119 +462,111 @@ foreach ($members_list as $row) {
 
     <script>
         const todayTasks = <?php echo json_encode($dashboard_today); ?>;
+        const availableMedicines = <?php echo json_encode($medicines_list); ?>;
+
+        // 1. Dynamic placeholder and button toggle
+        function handleTaskTypeChange(selectElem) {
+            const formCard = selectElem.closest('.form-card');
+            const labelElem = formCard.querySelector('.title-label');
+            const inputElem = formCard.querySelector('.task-title-input');
+            const findBtn = formCard.querySelector('.find-med-btn');
+            const box = formCard.querySelector('.med-suggestions-box');
+
+            if (selectElem.value === 'Clinic Date') {
+                labelElem.innerText = 'Clinic Name';
+                inputElem.placeholder = 'e.g. Asiri Central Hospital Clinic';
+                if (findBtn) findBtn.style.display = 'none';
+                if (box) box.style.display = 'none';
+            } else {
+                labelElem.innerText = 'Name / Title';
+                inputElem.placeholder = 'e.g. Metformin 500mg';
+                if (findBtn) findBtn.style.display = 'inline-block';
+            }
+        }
+
+        // 2. Autocomplete filtering based on prefix
+        function handleMedicineInput(inputElem) {
+            const formCard = inputElem.closest('.form-card');
+            const selectElem = formCard.querySelector('.task-type-select');
+            const box = formCard.querySelector('.med-suggestions-box');
+
+            if (selectElem.value !== 'Medicine') {
+                box.style.display = 'none';
+                return;
+            }
+
+            const query = inputElem.value.trim().toLowerCase();
+            if (query.length === 0) {
+                box.style.display = 'none';
+                return;
+            }
+
+            // Prefix matching first, then fuzzy match
+            const matches = availableMedicines.filter(med => 
+                med.toLowerCase().startsWith(query) || med.toLowerCase().includes(query)
+            );
+
+            box.innerHTML = '';
+            if (matches.length > 0) {
+                matches.forEach(med => {
+                    const item = document.createElement('div');
+                    item.className = 'med-suggestion-item';
+                    item.innerText = med;
+                    item.onmousedown = function () {
+                        inputElem.value = med;
+                        box.style.display = 'none';
+                    };
+                    box.appendChild(item);
+                });
+            } else {
+                const empty = document.createElement('div');
+                empty.className = 'med-suggestion-empty';
+                empty.innerText = 'No such medicine found';
+                box.appendChild(empty);
+            }
+
+            box.style.display = 'block';
+        }
+
+        // 3. "Find Medicine" button opens available list
+        function triggerFindMedicine(btnElem) {
+            const formCard = btnElem.closest('.form-card');
+            const inputElem = formCard.querySelector('.task-title-input');
+            const box = formCard.querySelector('.med-suggestions-box');
+
+            inputElem.focus();
+            box.innerHTML = '';
+
+            if (availableMedicines.length > 0) {
+                availableMedicines.forEach(med => {
+                    const item = document.createElement('div');
+                    item.className = 'med-suggestion-item';
+                    item.innerText = med;
+                    item.onmousedown = function () {
+                        inputElem.value = med;
+                        box.style.display = 'none';
+                    };
+                    box.appendChild(item);
+                });
+            } else {
+                const empty = document.createElement('div');
+                empty.className = 'med-suggestion-empty';
+                empty.innerText = 'No medicines available in database.';
+                box.appendChild(empty);
+            }
+
+            box.style.display = 'block';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.task-title-input') && 
+                !e.target.closest('.med-suggestions-box') && 
+                !e.target.closest('.find-med-btn')) {
+                document.querySelectorAll('.med-suggestions-box').forEach(b => b.style.display = 'none');
+            }
+        });
     </script>
     <script src="script.js"></script>
-
-    <script>
-    // Pass the database medicines to JavaScript
-    const availableMedicines = <?php echo json_encode($medicines_list); ?>;
-
-    // 1. Dynamic placeholder, label, and button toggle
-    function handleTaskTypeChange(selectElem) {
-        const formCard = selectElem.closest('.form-card');
-        const labelElem = formCard.querySelector('.title-label');
-        const inputElem = formCard.querySelector('.task-title-input');
-        const findBtn = formCard.querySelector('.find-med-btn');
-        const box = formCard.querySelector('.med-suggestions-box');
-
-        if (selectElem.value === 'Clinic Date') {
-            labelElem.innerText = 'Clinic Name';
-            inputElem.placeholder = 'e.g. Asiri Central Hospital Clinic';
-            if (findBtn) findBtn.style.display = 'none';
-            if (box) box.style.display = 'none';
-        } else {
-            labelElem.innerText = 'Name / Title';
-            inputElem.placeholder = 'e.g. Metformin 500mg';
-            if (findBtn) findBtn.style.display = 'inline-block';
-        }
-    }
-
-    // 2. Autocomplete filtering based on prefix
-    function handleMedicineInput(inputElem) {
-        const formCard = inputElem.closest('.form-card');
-        const selectElem = formCard.querySelector('.task-type-select');
-        const box = formCard.querySelector('.med-suggestions-box');
-
-        // Only suggest if "Medicine" is selected
-        if (selectElem.value !== 'Medicine') {
-            box.style.display = 'none';
-            return;
-        }
-
-        const query = inputElem.value.trim().toLowerCase();
-
-        if (query.length === 0) {
-            box.style.display = 'none';
-            return;
-        }
-
-        // Filter medicines that start with the typed prefix (or contain it)
-        const matches = availableMedicines.filter(med => 
-            med.toLowerCase().startsWith(query) || med.toLowerCase().includes(query)
-        );
-
-        box.innerHTML = '';
-
-        if (matches.length > 0) {
-            matches.forEach(med => {
-                const item = document.createElement('div');
-                item.className = 'med-suggestion-item';
-                item.innerText = med;
-                item.onmousedown = function () {
-                    inputElem.value = med;
-                    box.style.display = 'none';
-                };
-                box.appendChild(item);
-            });
-        } else {
-            const empty = document.createElement('div');
-            empty.className = 'med-suggestion-empty';
-            empty.innerText = 'No such medicine found in database';
-            box.appendChild(empty);
-        }
-
-        box.style.display = 'block';
-    }
-
-    // 3. "Find Medicine" button opens full list
-    function triggerFindMedicine(btnElem) {
-        const formCard = btnElem.closest('.form-card');
-        const inputElem = formCard.querySelector('.task-title-input');
-        const box = formCard.querySelector('.med-suggestions-box');
-
-        inputElem.focus();
-        box.innerHTML = '';
-
-        if (availableMedicines.length > 0) {
-            availableMedicines.forEach(med => {
-                const item = document.createElement('div');
-                item.className = 'med-suggestion-item';
-                item.innerText = med;
-                item.onmousedown = function () {
-                    inputElem.value = med;
-                    box.style.display = 'none';
-                };
-                box.appendChild(item);
-            });
-        } else {
-            const empty = document.createElement('div');
-            empty.className = 'med-suggestion-empty';
-            empty.innerText = 'No medicines available in database.';
-            box.appendChild(empty);
-        }
-
-        box.style.display = 'block';
-    }
-
-    // Close dropdown on click outside
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.task-title-input') && 
-            !e.target.closest('.med-suggestions-box') && 
-            !e.target.closest('.find-med-btn')) {
-            document.querySelectorAll('.med-suggestions-box').forEach(b => b.style.display = 'none');
-        }
-    });
-</script>
-
 </body>
 </html>
