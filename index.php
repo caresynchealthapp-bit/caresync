@@ -96,15 +96,14 @@ $tasks_query = "SELECT tasks.*, members.name AS member_name
 $all_tasks_result = $conn->query($tasks_query);
 
 // Fetch available medicines from Supabase (works for schema or public table)
+// Fetch available medicines from the separate PharmaConnect Supabase Project
 $medicines_list = [];
-$med_query = $conn->query("SELECT name FROM pharmaconnect_db.medicines ORDER BY name ASC");
-if (!$med_query) {
-    // Fallback if medicines table is under public
-    $med_query = $conn->query("SELECT name FROM public.medicines ORDER BY name ASC");
-}
-if ($med_query && $med_query->num_rows > 0) {
-    while ($m = $med_query->fetch_assoc()) {
-        $medicines_list[] = $m['name'];
+if (isset($pharma_conn) && $pharma_conn) {
+    $med_query = $pharma_conn->query("SELECT name FROM pharmaconnect_db.medicines ORDER BY name ASC");
+    if ($med_query && $med_query->num_rows > 0) {
+        while ($m = $med_query->fetch_assoc()) {
+            $medicines_list[] = $m['name'];
+        }
     }
 }
 
