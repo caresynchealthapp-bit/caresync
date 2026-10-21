@@ -12,34 +12,34 @@ require 'db.php';
 $error_message = "";
 $success_message = "";
 
+if (isset($_GET['registered']) && $_GET['registered'] == 'true') {
+    $success_message = "Account created successfully! You can now log in.";
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
     $safe_email = $conn->real_escape_string($email);
 
-    // Flexible query checking lowercase and trimmed values
-    $sql = "SELECT * FROM users WHERE LOWER(TRIM(email)) = '$safe_email'";
+    // Case-insensitive trimmed lookup
+    $sql = "SELECT * FROM users WHERE LOWER(TRIM(email)) = '$safe_email' LIMIT 1";
     $result = $conn->query($sql);
 
-    // DEBUG CHECK: If no user found, dump the existing users from that database
-    if ($result->num_rows === 0) {
-        $dump_res = $conn->query("SELECT id, email FROM users LIMIT 10");
-        $found_emails = [];
-        while ($r = $dump_res->fetch_assoc()) {
-            $found_emails[] = "'" . $r['email'] . "'";
-        }
-        $list = implode(", ", $found_emails);
-        $error_message = "No account found for: [$email]. Registered emails in this database: [" . ($list ?: 'NONE - TABLE IS EMPTY') . "]";
-    } else {
-        $user = $result->fetch_assoc();
+    // Fetch the user row directly
+    $user = ($result) ? $result->fetch_assoc() : null;
+
+    if ($user) {
         if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_id'] = (int)$user['id'];
             $_SESSION['user_name'] = $user['name'];
+            
             header("Location: index.php");
             exit();
         } else {
             $error_message = "Incorrect password.";
         }
+    } else {
+        $error_message = "No account found with this email.";
     }
 }
 ?>
@@ -87,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
                 </div>
             <?php endif; ?>
 
-            <!-- Show success message if they just registered -->
             <?php if (!empty($success_message)): ?>
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success_message); ?>
