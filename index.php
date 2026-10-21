@@ -95,6 +95,19 @@ $tasks_query = "SELECT tasks.*, members.name AS member_name
                 ORDER BY tasks.schedule_time ASC";
 $all_tasks_result = $conn->query($tasks_query);
 
+// Fetch available medicines from Supabase (works for schema or public table)
+$medicines_list = [];
+$med_query = $conn->query("SELECT name FROM pharmaconnect_db.medicines ORDER BY name ASC");
+if (!$med_query) {
+    // Fallback if medicines table is under public
+    $med_query = $conn->query("SELECT name FROM public.medicines ORDER BY name ASC");
+}
+if ($med_query && $med_query->num_rows > 0) {
+    while ($m = $med_query->fetch_assoc()) {
+        $medicines_list[] = $m['name'];
+    }
+}
+
 $today_str = date('Y-m-d');
 $dashboard_today = [];
 $dashboard_upcoming = [];
@@ -133,6 +146,47 @@ function formatDateTime($datetime) {
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; }
         .btn-primary { background-color: var(--primary); color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        /* Styling for the autocomplete dropdown */
+    .med-suggestions-box {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 130px; /* leaves room beside Find Medicine button */
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 9999;
+        margin-top: 4px;
+    }
+
+    .med-suggestion-item {
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #1e293b;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s ease;
+    }
+
+    .med-suggestion-item:last-child {
+        border-bottom: none;
+    }
+
+    .med-suggestion-item:hover {
+        background-color: #f0fdf4;
+        color: #15803d;
+        font-weight: 500;
+    }
+
+    .med-suggestion-empty {
+        padding: 12px 14px;
+        font-size: 13px;
+        color: #94a3b8;
+        font-style: italic;
+    }
     </style>
     <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
     <link rel="manifest" href="manifest.json">
@@ -350,18 +404,34 @@ function formatDateTime($datetime) {
                             <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
                             
                             <div class="two-col">
-                                <div class="form-group">
-                                    <label>Task Type</label>
-                                    <select name="task_type" required>
-                                        <option value="Medicine">Medicine</option>
-                                        <option value="Clinic Date">Clinic Date</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Name / Title</label>
-                                    <input type="text" name="title" required placeholder="e.g. Metformin 500mg">
-                                </div>
-                            </div>
+    <div class="form-group">
+        <label>Task Type</label>
+        <select name="task_type" class="task-type-select" onchange="handleTaskTypeChange(this)" required>
+            <option value="Medicine">Medicine</option>
+            <option value="Clinic Date">Clinic Date</option>
+        </select>
+    </div>
+    <div class="form-group" style="position: relative;">
+        <label class="title-label">Name / Title</label>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" 
+                   name="title" 
+                   class="task-title-input" 
+                   required 
+                   placeholder="e.g. Metformin 500mg" 
+                   autocomplete="off"
+                   oninput="handleMedicineInput(this)">
+            <button type="button" 
+                    class="btn-primary find-med-btn" 
+                    onclick="triggerFindMedicine(this)" 
+                    style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
+                <i class="fas fa-search"></i> Find Medicine
+            </button>
+        </div>
+        <!-- Dropdown suggestion list -->
+        <div class="med-suggestions-box" style="display: none;"></div>
+    </div>
+</div>
                             
                             <div class="two-col">
                                 <div class="form-group">
@@ -393,5 +463,117 @@ function formatDateTime($datetime) {
         const todayTasks = <?php echo json_encode($dashboard_today); ?>;
     </script>
     <script src="script.js"></script>
+
+    <script>
+    // Pass the database medicines to JavaScript
+    const availableMedicines = <?php echo json_encode($medicines_list); ?>;
+
+    // 1. Dynamic placeholder, label, and button toggle
+    function handleTaskTypeChange(selectElem) {
+        const formCard = selectElem.closest('.form-card');
+        const labelElem = formCard.querySelector('.title-label');
+        const inputElem = formCard.querySelector('.task-title-input');
+        const findBtn = formCard.querySelector('.find-med-btn');
+        const box = formCard.querySelector('.med-suggestions-box');
+
+        if (selectElem.value === 'Clinic Date') {
+            labelElem.innerText = 'Clinic Name';
+            inputElem.placeholder = 'e.g. Asiri Central Hospital Clinic';
+            if (findBtn) findBtn.style.display = 'none';
+            if (box) box.style.display = 'none';
+        } else {
+            labelElem.innerText = 'Name / Title';
+            inputElem.placeholder = 'e.g. Metformin 500mg';
+            if (findBtn) findBtn.style.display = 'inline-block';
+        }
+    }
+
+    // 2. Autocomplete filtering based on prefix
+    function handleMedicineInput(inputElem) {
+        const formCard = inputElem.closest('.form-card');
+        const selectElem = formCard.querySelector('.task-type-select');
+        const box = formCard.querySelector('.med-suggestions-box');
+
+        // Only suggest if "Medicine" is selected
+        if (selectElem.value !== 'Medicine') {
+            box.style.display = 'none';
+            return;
+        }
+
+        const query = inputElem.value.trim().toLowerCase();
+
+        if (query.length === 0) {
+            box.style.display = 'none';
+            return;
+        }
+
+        // Filter medicines that start with the typed prefix (or contain it)
+        const matches = availableMedicines.filter(med => 
+            med.toLowerCase().startsWith(query) || med.toLowerCase().includes(query)
+        );
+
+        box.innerHTML = '';
+
+        if (matches.length > 0) {
+            matches.forEach(med => {
+                const item = document.createElement('div');
+                item.className = 'med-suggestion-item';
+                item.innerText = med;
+                item.onmousedown = function () {
+                    inputElem.value = med;
+                    box.style.display = 'none';
+                };
+                box.appendChild(item);
+            });
+        } else {
+            const empty = document.createElement('div');
+            empty.className = 'med-suggestion-empty';
+            empty.innerText = 'No such medicine found in database';
+            box.appendChild(empty);
+        }
+
+        box.style.display = 'block';
+    }
+
+    // 3. "Find Medicine" button opens full list
+    function triggerFindMedicine(btnElem) {
+        const formCard = btnElem.closest('.form-card');
+        const inputElem = formCard.querySelector('.task-title-input');
+        const box = formCard.querySelector('.med-suggestions-box');
+
+        inputElem.focus();
+        box.innerHTML = '';
+
+        if (availableMedicines.length > 0) {
+            availableMedicines.forEach(med => {
+                const item = document.createElement('div');
+                item.className = 'med-suggestion-item';
+                item.innerText = med;
+                item.onmousedown = function () {
+                    inputElem.value = med;
+                    box.style.display = 'none';
+                };
+                box.appendChild(item);
+            });
+        } else {
+            const empty = document.createElement('div');
+            empty.className = 'med-suggestion-empty';
+            empty.innerText = 'No medicines available in database.';
+            box.appendChild(empty);
+        }
+
+        box.style.display = 'block';
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.task-title-input') && 
+            !e.target.closest('.med-suggestions-box') && 
+            !e.target.closest('.find-med-btn')) {
+            document.querySelectorAll('.med-suggestions-box').forEach(b => b.style.display = 'none');
+        }
+    });
+</script>
+
 </body>
 </html>
