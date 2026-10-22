@@ -2,44 +2,89 @@
 require_once 'db.php';
 date_default_timezone_set('Asia/Colombo');
 
-// --- FIXED DATABASE QUERY: TARGET EXACT TASK ID FROM JAVASCRIPT ---
-if (isset($_POST['task_id']) && is_numeric($_POST['task_id'])) {
-    $target_id = (int)$_POST['task_id'];
-    $sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
-            FROM tasks t 
-            JOIN members m ON t.member_id = m.id 
-            JOIN users u ON m.user_id = u.id 
-            WHERE t.id = $target_id 
-              AND t.status = 'Pending' 
-              AND t.email_sent = FALSE";
-} else {
-    // Fallback if the script is run manually in the browser
-    $current_time = date('Y-m-d H:i:s');
-    $sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
-            FROM tasks t 
-            JOIN members m ON t.member_id = m.id 
-            JOIN users u ON m.user_id = u.id 
-            WHERE t.schedule_time <= '$current_time' 
-              AND t.status = 'Pending' 
-              AND t.email_sent = FALSE";
-}
+$current_timestamp = time();
+$current_time_str  = date('Y-m-d H:i:s', $current_timestamp);
+$today_date_str    = date('Y-m-d', $current_timestamp);
+$current_time_only = date('H:i', $current_timestamp);
+
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$dashboard_url = "$protocol://$host/index.php";
+$google_script_url = 'https://script.google.com/macros/s/AKfycbzqVsoKCLbtcREInR9yRx5M48bW6N1sztBi4Mvrqt_brj1Cshfuh6hq4raqJEkSO8y9/exec';
+
+// Fetch all pending tasks that still have unsent reminder stages
+$sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
+        FROM tasks t 
+        JOIN members m ON t.member_id = m.id 
+        JOIN users u ON m.user_id = u.id 
+        WHERE t.status = 'Pending' 
+          AND (t.reminder_stage_1 = FALSE OR t.reminder_stage_2 = FALSE)";
 
 $result = $conn->query($sql);
 
 if ($result && $result->num_rows > 0) {
-    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $dashboard_url = "$protocol://$host/index.php";
-
     while ($task = $result->fetch_assoc()) {
-        $to_email = $task['user_email'];
-        $member_name = htmlspecialchars($task['member_name']);
-        $title = htmlspecialchars($task['title']);
+        $task_id       = (int)$task['id'];
+        $task_type     = $task['task_type'];
+        $sched_ts      = strtotime($task['schedule_time']);
+        $sched_date    = date('Y-m-d', $sched_ts);
+        $sched_time_hm = date('h:i A', $sched_ts);
+        
+        $stage_to_send = null;
+        $subject_prefix = "";
+        $notice_text    = "";
+
+        if ($task_type === 'Medicine') {
+            // Stage 1: 5 minutes before scheduled time (within a 5-minute window)
+            $diff_seconds = $sched_ts - $current_timestamp;
+            if (!$task['reminder_stage_1'] && $diff_seconds <= 300 && $diff_seconds > 0) {
+                $stage_to_send  = 1;
+                $subject_prefix = "Upcoming Medicine in 5 Minutes";
+                $notice_text    = "This is a quick 5-minute reminder to prepare and take the prescribed medicine.";
+            }
+            // Stage 2: Exactly at or after the scheduled time
+            else if (!$task['reminder_stage_2'] && $current_timestamp >= $sched_ts) {
+                $stage_to_send  = 2;
+                $subject_prefix = "Time to Take Medicine Now";
+                $notice_text    = "It is now scheduled time to take this medicine.";
+            }
+        } 
+        else if ($task_type === 'Clinic Date') {
+            $yesterday_of_clinic = date('Y-m-d', strtotime('-1 day', $sched_ts));
+            
+            // Stage 1: The day before the clinic date, from 8:00 PM (20:00) onwards
+            if (!$task['reminder_stage_1'] && $today_date_str === $yesterday_of_clinic && $current_time_only >= '20:00') {
+                $stage_to_send  = 1;
+                $subject_prefix = "Tomorrow's Clinic Appointment Reminder";
+                $notice_text    = "Friendly reminder: You have a clinic appointment scheduled for tomorrow.";
+            }
+            // Stage 2: 1 hour before appointment (within 60 minutes)
+            else if (!$task['reminder_stage_2']) {
+                $diff_seconds = $sched_ts - $current_timestamp;
+                if ($diff_seconds <= 3600 && $diff_seconds >= 0) {
+                    $stage_to_send  = 2;
+                    $subject_prefix = "Clinic Appointment in 1 Hour";
+                    $notice_text    = "Your clinic appointment is starting in approximately 1 hour. Please prepare to travel.";
+                }
+            }
+        }
+
+        // If no reminder criteria matched for this task during this check, continue
+        if ($stage_to_send === null) {
+            continue;
+        }
+
+        // --- ATOMIC STAGE LOCK ---
+        $column_to_lock = "reminder_stage_" . $stage_to_send;
+        $lock = $conn->query("UPDATE tasks SET $column_to_lock = TRUE WHERE id = $task_id AND $column_to_lock = FALSE");
+
+        // Compose and deliver email
+        $to_email     = $task['user_email'];
+        $member_name  = htmlspecialchars($task['member_name']);
+        $title        = htmlspecialchars($task['title']);
         $instructions = !empty($task['instructions']) ? htmlspecialchars($task['instructions']) : 'None';
-        $time = date('h:i A', strtotime($task['schedule_time']));
-        
-        $subject = "CareSync Alert: {$member_name}'s Task is Due!";
-        
+        $subject      = "CareSync Alert: [{$subject_prefix}] for {$member_name}";
+
         $htmlContent = "
         <html>
         <head>
@@ -57,60 +102,50 @@ if ($result && $result->num_rows > 0) {
         </head>
         <body>
             <div class='container'>
-                <div class='header'>💙 CareSync</div>
+                <div class='header'>💙 CareSync Reminder</div>
                 <p>Hello,</p>
-                <p>It's time for <strong>{$member_name}</strong>'s scheduled health task.</p>
+                <p>{$notice_text}</p>
                 <div class='task-card'>
-                    <h3 class='task-title'>{$title}</h3>
-                    <p class='task-detail'><strong>Instructions:</strong> {$instructions}</p>
-                    <p class='task-detail'><strong>Time:</strong> {$time}</p>
+                    <h3 class='task-title'>{$title} ({$task_type})</h3>
+                    <p class='task-detail'><strong>Member:</strong> {$member_name}</p>
+                    <p class='task-detail'><strong>Scheduled For:</strong> " . date('M d, Y', $sched_ts) . " at {$sched_time_hm}</p>
+                    <p class='task-detail'><strong>Notes:</strong> {$instructions}</p>
                 </div>
                 <div class='btn-container'>
                     <a href='{$dashboard_url}' class='btn'>Open Dashboard</a>
                 </div>
-                <div class='footer'>This is an automated alert from your CareSync family health tracker.</div>
+                <div class='footer'>Automated alert sent from your CareSync family health tracker.</div>
             </div>
         </body>
         </html>";
 
-        // Build the JSON payload for Google Apps Script
         $data = [
             'to' => $to_email,
             'subject' => $subject,
             'htmlContent' => $htmlContent
         ];
 
-        // PASTE YOUR GOOGLE WEB APP URL HERE
-        $google_script_url = 'https://script.google.com/macros/s/AKfycbzqVsoKCLbtcREInR9yRx5M48bW6N1sztBi4Mvrqt_brj1Cshfuh6hq4raqJEkSO8y9/exec';
-
-        // Execute the HTTPS POST Request via cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $google_script_url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Required for Google Scripts
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json'
-        ]);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 
-        $response = curl_exec($ch);
+        $response  = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        // Google Apps Script redirects, so a 200 or 302 code means success
         if ($http_code == 200 || $http_code == 302) {
-            $task_id = (int)$task['id'];
-            $conn->query("UPDATE tasks SET email_sent = TRUE WHERE id = $task_id");
-            echo "API Email successfully delivered to $to_email via Google Apps Script<br>";
+            echo "Stage {$stage_to_send} alert sent to {$to_email} for task #{$task_id}<br>";
         } else {
-            echo "Failed to send. Code: $http_code. Response: $response<br>";
+            // Revert flag on delivery failure so subsequent cron triggers can retry
+            $conn->query("UPDATE tasks SET $column_to_lock = FALSE WHERE id = $task_id");
+            echo "Delivery failed for task #{$task_id}. Response: {$response}<br>";
         }
     }
 } else {
-    echo "No pending tasks are due right now.";
+    echo "No reminder alerts due at this time.";
 }
 ?>
-
-
-
