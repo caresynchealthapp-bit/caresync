@@ -35,8 +35,9 @@ if ($result && $result->num_rows > 0) {
         $notice_text    = "";
 
         if ($task_type === 'Medicine') {
-            // Stage 1: 5 minutes before scheduled time (within a 5-minute window)
             $diff_seconds = $sched_ts - $current_timestamp;
+            
+            // Stage 1: 5 minutes before scheduled time (within a 5-minute window)
             if (!$task['reminder_stage_1'] && $diff_seconds <= 300 && $diff_seconds > 0) {
                 $stage_to_send  = 1;
                 $subject_prefix = "Upcoming Medicine in 5 Minutes";
