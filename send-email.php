@@ -14,11 +14,11 @@ $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $dashboard_url = $protocol . "://" . $host . "/index.php";
 $google_script_url = 'https://script.google.com/macros/s/AKfycbzqVsoKCLbtcREInR9yRx5M48bW6N1sztBi4Mvrqt_brj1Cshfuh6hq4raqJEkSO8y9/exec';
 
-// Ensure columns exist so query never fails
+// Ensure stage tracking columns exist
 @$conn->query("ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS reminder_stage_1 BOOLEAN DEFAULT FALSE");
 @$conn->query("ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS reminder_stage_2 BOOLEAN DEFAULT FALSE");
 
-// Fetch all pending tasks that still have unsent reminder stages
+// Fetch all pending tasks with unsent reminder stages
 $sql = "SELECT t.*, m.name AS member_name, u.email AS user_email 
         FROM tasks t 
         JOIN members m ON t.member_id = m.id 
@@ -39,7 +39,6 @@ if ($result) {
         $sched_ts      = strtotime($task['schedule_time']);
         $sched_time_hm = date('h:i A', $sched_ts);
 
-        // PostgreSQL returns 't' or 'f' strings for booleans in pg_fetch_assoc
         $stage1_done = ($task['reminder_stage_1'] === true || $task['reminder_stage_1'] === 't' || $task['reminder_stage_1'] === 'true' || $task['reminder_stage_1'] === '1');
         $stage2_done = ($task['reminder_stage_2'] === true || $task['reminder_stage_2'] === 't' || $task['reminder_stage_2'] === 'true' || $task['reminder_stage_2'] === '1');
 
@@ -50,13 +49,13 @@ if ($result) {
         $diff_seconds = $sched_ts - $current_timestamp;
 
         if ($task_type === 'Medicine') {
-            // 1. Five minutes before medicine schedule (between 0 and 300 seconds before)
+            // Stage 1: 5 minutes before medicine time
             if (!$stage1_done && $diff_seconds <= 300 && $diff_seconds > 0) {
                 $stage_to_send  = 1;
                 $subject_prefix = "Upcoming Medicine in 5 Minutes";
                 $notice_text    = "This is a quick 5-minute reminder to prepare and take the prescribed medicine.";
             }
-            // 2. At or after the exact medicine schedule time
+            // Stage 2: Exactly at or after medicine time
             elseif (!$stage2_done && $current_timestamp >= $sched_ts) {
                 $stage_to_send  = 2;
                 $subject_prefix = "Time to Take Medicine Now";
@@ -66,13 +65,13 @@ if ($result) {
         elseif ($task_type === 'Clinic Date') {
             $yesterday_of_clinic = date('Y-m-d', strtotime('-1 day', $sched_ts));
 
-            // 1. Around 8:00 PM (20:00+) the day before the clinic date
+            // Stage 1: 8:00 PM (20:00+) the day before clinic date
             if (!$stage1_done && $today_date_str === $yesterday_of_clinic && $current_time_only >= '20:00') {
                 $stage_to_send  = 1;
                 $subject_prefix = "Tomorrow's Clinic Appointment Reminder";
                 $notice_text    = "Friendly reminder: You have a clinic appointment scheduled for tomorrow.";
             }
-            // 2. One hour before the clinic time (between 0 and 3600 seconds before, or if due now)
+            // Stage 2: 1 hour before clinic appointment time
             elseif (!$stage2_done && $diff_seconds <= 3600 && $diff_seconds >= -1800) {
                 $stage_to_send  = 2;
                 $subject_prefix = "Clinic Appointment in 1 Hour";
@@ -84,7 +83,7 @@ if ($result) {
             continue;
         }
 
-        // Atomic stage lock to prevent duplicate emails
+        // Atomic stage lock
         $column_to_lock = "reminder_stage_" . $stage_to_send;
         $conn->query("UPDATE tasks SET $column_to_lock = TRUE, email_sent = TRUE WHERE id = $task_id");
 
@@ -150,7 +149,6 @@ if ($result) {
             $sent_any = true;
             echo "SUCCESS: Stage {$stage_to_send} ({$subject_prefix}) sent to {$to_email} for task #{$task_id}<br>";
         } else {
-            // Revert stage flag if delivery failed
             $conn->query("UPDATE tasks SET $column_to_lock = FALSE WHERE id = $task_id");
             echo "FAILED: Task #{$task_id} HTTP Code {$http_code}. Response: {$response}<br>";
         }
@@ -158,8 +156,8 @@ if ($result) {
 }
 
 if (!$processed_any) {
-    echo "No pending tasks with unsent reminders found in database.";
+    echo "No pending tasks with unsent reminders found.";
 } elseif (!$sent_any) {
-    echo "Checked pending tasks, but none are inside their trigger window right now (Current Colombo time: " . date('Y-m-d h:i:s A', $current_timestamp) . ").";
+    echo "Checked pending tasks, but none are inside their trigger window right now.";
 }
 ?>

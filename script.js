@@ -162,12 +162,10 @@ function triggerAlert(task, customPrefix = null) {
             console.warn("Native notification blocked:", e);
         }
     }
-
-    // Trigger backend email dispatcher
+    
     pollEmailReminders();
 }
 
-// Polls send-email.php so both Stage 1 (5m before / 8PM day before) and Stage 2 (on time / 1h before) emails fire reliably
 function pollEmailReminders() {
     fetch('send-email.php')
         .then(response => response.text())
@@ -182,7 +180,6 @@ function pollEmailReminders() {
 const localAlertedKeys = new Set();
 
 function checkTasks() {
-    // Always poll backend email script for due Stage 1 / Stage 2 emails across today & tomorrow
     pollEmailReminders();
 
     if (typeof todayTasks === 'undefined' || !Array.isArray(todayTasks)) return;
@@ -196,13 +193,12 @@ function checkTasks() {
         const taskTime = new Date(safeDateString);
         const diffSeconds = (taskTime.getTime() - now.getTime()) / 1000;
 
-        // Stage 1 Browser Alert: 5 minutes before Medicine or 1 hour before Clinic
         if (task.task_type === 'Medicine' && diffSeconds <= 300 && diffSeconds > 0) {
             const key1 = 'notified_s1_' + task.id;
             if (!localAlertedKeys.has(key1) && !localStorage.getItem(key1)) {
                 localAlertedKeys.add(key1);
                 try { localStorage.setItem(key1, 'true'); } catch(e) {}
-                triggerAlert(task, 'Upcoming in 5 mins');
+                triggerAlert(task, 'Upcoming Medicine in 5 mins');
             }
         } else if (task.task_type === 'Clinic Date' && diffSeconds <= 3600 && diffSeconds > 0) {
             const key1 = 'notified_s1_' + task.id;
@@ -213,7 +209,6 @@ function checkTasks() {
             }
         }
 
-        // Stage 2 Browser Alert: Exact scheduled time reached
         if (now >= taskTime) {
             const key2 = 'notified_s2_' + task.id;
             if (!localAlertedKeys.has(key2) && !localStorage.getItem(key2)) {
