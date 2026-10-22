@@ -17,7 +17,6 @@ async function registerPushNotifications(force = false) {
         return;
     }
 
-    // If already synced, don't re-subscribe on refresh unless user clicks the bell
     if (!force && localStorage.getItem('caresync_push_synced') === 'true') {
         return;
     }
@@ -144,8 +143,10 @@ function createToast(title, body) {
     }, 8000);
 }
 
-function triggerAlert(task) {
-    const title = `Time for ${task.member_name || 'Family'}'s Task`;
+function triggerAlert(task, customPrefix = null) {
+    const title = customPrefix 
+        ? `${customPrefix}: ${task.member_name || 'Family'}`
+        : `Time for ${task.member_name || 'Family'}'s Task`;
     const body = `${task.title || 'Medicine/Clinic'} - ${task.instructions || 'No instructions'}`;
 
     playDing();
@@ -161,24 +162,29 @@ function triggerAlert(task) {
             console.warn("Native notification blocked:", e);
         }
     }
-    
-    if (task.id && task.id !== 'test') {
-        const formData = new FormData();
-        formData.append('task_id', task.id);
 
-        fetch('send-email.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.text())
-        .then(data => console.log("CareSync Email Status:", data))
-        .catch(error => console.error("Error triggering email:", error));
-    }
+    // Trigger backend email dispatcher
+    pollEmailReminders();
 }
 
-const localAlertedIds = new Set();
+// Polls send-email.php so both Stage 1 (5m before / 8PM day before) and Stage 2 (on time / 1h before) emails fire reliably
+function pollEmailReminders() {
+    fetch('send-email.php')
+        .then(response => response.text())
+        .then(data => {
+            if (data && data.includes('SUCCESS:')) {
+                console.log("CareSync Email Dispatched:", data);
+            }
+        })
+        .catch(error => console.error("Error polling send-email.php:", error));
+}
+
+const localAlertedKeys = new Set();
 
 function checkTasks() {
+    // Always poll backend email script for due Stage 1 / Stage 2 emails across today & tomorrow
+    pollEmailReminders();
+
     if (typeof todayTasks === 'undefined' || !Array.isArray(todayTasks)) return;
 
     const now = new Date();
@@ -188,18 +194,32 @@ function checkTasks() {
 
         const safeDateString = task.schedule_time.replace(' ', 'T'); 
         const taskTime = new Date(safeDateString);
-        
+        const diffSeconds = (taskTime.getTime() - now.getTime()) / 1000;
+
+        // Stage 1 Browser Alert: 5 minutes before Medicine or 1 hour before Clinic
+        if (task.task_type === 'Medicine' && diffSeconds <= 300 && diffSeconds > 0) {
+            const key1 = 'notified_s1_' + task.id;
+            if (!localAlertedKeys.has(key1) && !localStorage.getItem(key1)) {
+                localAlertedKeys.add(key1);
+                try { localStorage.setItem(key1, 'true'); } catch(e) {}
+                triggerAlert(task, 'Upcoming in 5 mins');
+            }
+        } else if (task.task_type === 'Clinic Date' && diffSeconds <= 3600 && diffSeconds > 0) {
+            const key1 = 'notified_s1_' + task.id;
+            if (!localAlertedKeys.has(key1) && !localStorage.getItem(key1)) {
+                localAlertedKeys.add(key1);
+                try { localStorage.setItem(key1, 'true'); } catch(e) {}
+                triggerAlert(task, 'Clinic in 1 hour');
+            }
+        }
+
+        // Stage 2 Browser Alert: Exact scheduled time reached
         if (now >= taskTime) {
-            const storageKey = 'notified_' + task.id;
-            const alreadyNotified = localAlertedIds.has(task.id) || localStorage.getItem(storageKey);
-
-            if (!alreadyNotified) {
-                localAlertedIds.add(task.id);
-                try {
-                    localStorage.setItem(storageKey, 'true');
-                } catch(e) {}
-
-                triggerAlert(task);
+            const key2 = 'notified_s2_' + task.id;
+            if (!localAlertedKeys.has(key2) && !localStorage.getItem(key2)) {
+                localAlertedKeys.add(key2);
+                try { localStorage.setItem(key2, 'true'); } catch(e) {}
+                triggerAlert(task, 'Due Now');
             }
         }
     });
@@ -213,18 +233,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (menuBtn) menuBtn.addEventListener('click', toggleMobileMenu);
     if (overlay) overlay.addEventListener('click', closeMobileMenu);
 
-    // Clicking the bell forces re-registration
     document.querySelectorAll('.notification-btn, #request-notif-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             registerPushNotifications(true);
         });
     });
 
-    // Check on load (will not duplicate if already synced)
     if ('Notification' in window && Notification.permission === 'granted') {
         registerPushNotifications(false);
     }
 
     checkTasks();
-    setInterval(checkTasks, 10000);
+    setInterval(checkTasks, 15000);
 });

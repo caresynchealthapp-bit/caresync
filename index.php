@@ -251,31 +251,39 @@ function formatDateTime($datetime) {
                 <p style="color: var(--text-gray); margin-bottom: 20px;">Manage upcoming medicines and clinics. Mark tasks as done to move them to the history log.</p>
                 
                 <div class="dashboard-grid">
-                    
                     <!-- LEFT COLUMN: TODAY / URGENT -->
                     <div class="dash-column">
                         <h3><i class="fas fa-exclamation-circle text-danger"></i> Today's Schedule</h3>
                         <?php if (count($dashboard_today) > 0): ?>
-                            <?php foreach($dashboard_today as $task): ?>
-                                <div class="task-item" style="border-left: 4px solid var(--danger);">
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                                        <div>
-                                            <h4 style="margin-bottom: 5px;"><?php echo htmlspecialchars($task['member_name']); ?> - <?php echo htmlspecialchars($task['title']); ?></h4>
-                                            <p style="font-size: 13px; color: var(--text-gray);"><i class="fas fa-clock"></i> <?php echo formatDateTime($task['schedule_time']); ?></p>
-                                            <p style="font-size: 13px; margin-top: 5px; font-style: italic;"><?php echo htmlspecialchars($task['instructions']); ?></p>
+                            <?php foreach($dashboard_today as $task): 
+                                $raw_note = trim($task['instructions'] ?? '');
+                                $has_valid_note = (!empty($raw_note) && strtolower($raw_note) !== 'none');
+                            ?>
+                                <div class="task-item-modern">
+                                    <div class="task-info-group">
+                                        <div class="task-title-row">
+                                            <span class="member-badge"><i class="fas fa-user"></i> <?php echo htmlspecialchars($task['member_name']); ?></span>
+                                            <h4 class="task-main-title"><?php echo htmlspecialchars($task['title']); ?></h4>
                                         </div>
-                                        <div>
-                                            <form action="index.php" method="POST">
-                                                <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
-                                                <button type="submit" class="btn-success"><i class="fas fa-check"></i> Done</button>
-                                                <button type="button" 
-                                                    class="btn-primary find-med-btn"  
-                                                    style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
-                                                    <i class="fas fa-search"></i> Find Medicine
-                                                </button>
-                                            </form>
-                                        </div>
+                                        <p class="task-meta-time">
+                                            <i class="far fa-clock"></i> <?php echo formatDateTime($task['schedule_time']); ?>
+                                        </p>
+                                        <?php if ($has_valid_note): ?>
+                                            <p class="task-meta-note"><?php echo htmlspecialchars($raw_note); ?></p>
+                                        <?php endif; ?>
                                     </div>
+
+                                    <form action="index.php" method="POST" class="task-actions-group">
+                                        <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
+                                        <button type="submit" class="btn-action-done">
+                                            <i class="fas fa-check"></i> Done
+                                        </button>
+                                        <?php if ($task['task_type'] === 'Medicine'): ?>
+                                            <button type="button" class="btn-action-find find-med-btn">
+                                                <i class="fas fa-search"></i> Find Medicine
+                                            </button>
+                                        <?php endif; ?>
+                                    </form>
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
