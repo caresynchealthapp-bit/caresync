@@ -420,8 +420,7 @@ function formatDateTime($datetime) {
                                                autocomplete="off"
                                                oninput="handleMedicineInput(this)">
                                         <button type="button" 
-                                                class="btn-primary find-med-btn" 
-                                                onclick="triggerFindMedicine(this)" 
+                                                class="btn-primary find-med-btn"  
                                                 style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
                                             <i class="fas fa-search"></i> Find Medicine
                                         </button>
@@ -525,35 +524,7 @@ function formatDateTime($datetime) {
             box.style.display = 'block';
         }
 
-        // 3. "Find Medicine" button opens available list
-        function triggerFindMedicine(btnElem) {
-            const formCard = btnElem.closest('.form-card');
-            const inputElem = formCard.querySelector('.task-title-input');
-            const box = formCard.querySelector('.med-suggestions-box');
-
-            inputElem.focus();
-            box.innerHTML = '';
-
-            if (availableMedicines.length > 0) {
-                availableMedicines.forEach(med => {
-                    const item = document.createElement('div');
-                    item.className = 'med-suggestion-item';
-                    item.innerText = med;
-                    item.onmousedown = function () {
-                        inputElem.value = med;
-                        box.style.display = 'none';
-                    };
-                    box.appendChild(item);
-                });
-            } else {
-                const empty = document.createElement('div');
-                empty.className = 'med-suggestion-empty';
-                empty.innerText = 'No medicines available in database.';
-                box.appendChild(empty);
-            }
-
-            box.style.display = 'block';
-        }
+        
 
         // Close dropdown when clicking outside
         document.addEventListener('click', function (e) {
