@@ -268,6 +268,11 @@ function formatDateTime($datetime) {
                                             <form action="index.php" method="POST">
                                                 <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
                                                 <button type="submit" class="btn-success"><i class="fas fa-check"></i> Done</button>
+                                                <button type="button" 
+                                                    class="btn-primary find-med-btn"  
+                                                    style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
+                                                    <i class="fas fa-search"></i> Find Medicine
+                                                </button>
                                             </form>
                                         </div>
                                     </div>
@@ -419,11 +424,6 @@ function formatDateTime($datetime) {
                                                placeholder="e.g. Metformin 500mg" 
                                                autocomplete="off"
                                                oninput="handleMedicineInput(this)">
-                                        <button type="button" 
-                                                class="btn-primary find-med-btn"  
-                                                style="white-space: nowrap; padding: 10px 14px; font-size: 13px;">
-                                            <i class="fas fa-search"></i> Find Medicine
-                                        </button>
                                     </div>
                                     <!-- Suggestions Container -->
                                     <div class="med-suggestions-box" style="display: none;"></div>
