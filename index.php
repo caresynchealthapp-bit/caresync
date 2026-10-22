@@ -117,14 +117,10 @@ if ($all_tasks_result) {
     }
 }
 
-// 3. Fetch Medicines from PharmaConnect Supabase Project
+// Fetch Medicines from PharmaConnect Supabase Project
 $medicines_list = [];
 $target_conn = (isset($pharma_conn) && $pharma_conn) ? $pharma_conn : $conn;
-$med_query = @$target_conn->query("SELECT name FROM pharmaconnect_db.medicines ORDER BY name ASC");
-if (!$med_query) {
-    // Fallback if public schema is used
-    $med_query = @$target_conn->query("SELECT name FROM medicines ORDER BY name ASC");
-}
+$med_query = @$target_conn->query("SELECT name FROM public.medicines ORDER BY name ASC");
 if ($med_query) {
     while ($med_row = $med_query->fetch_assoc()) {
         if (!empty($med_row['name'])) {
