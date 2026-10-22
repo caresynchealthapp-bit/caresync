@@ -1,19 +1,28 @@
 <?php
 require_once 'db.php';
-date_default_timezone_set('Asia/Colombo'); // Ensures the time check matches your local time
+date_default_timezone_set('Asia/Colombo'); //[cite: 12]
 
-$current_time = date('Y-m-d H:i:s'); // Captures the exact local time right now[cite: 3]
+$current_time = date('Y-m-d H:i:s'); //[cite: 12]
 
-// Query for any tasks that have reached their schedule time but are still marked as 'Pending'[cite: 1]
-$sql = "SELECT id FROM tasks WHERE schedule_time <= '$current_time' AND status = 'Pending' LIMIT 1";
+// Get the user_id from the Python script URL, default to 1 (Kavindi) if missing[cite: 13]
+$user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 1;
+
+// Join tasks with members to accurately filter by user_id[cite: 10]
+$sql = "SELECT tasks.id 
+        FROM tasks 
+        JOIN members ON tasks.member_id = members.id 
+        WHERE members.user_id = '$user_id' 
+        AND tasks.schedule_time <= '$current_time' 
+        AND tasks.status = 'Pending' 
+        LIMIT 1";
+        
 $result = $conn->query($sql);
 
-header('Content-Type: application/json');
+header('Content-Type: application/json'); //[cite: 12]
 
-// If a pending task's time has arrived or passed, command the LED to turn ON
-if ($result && $result->num_rows > 0) {
-    echo json_encode(["led_state" => "ON"]);
+if ($result && $result->num_rows > 0) { //[cite: 12]
+    echo json_encode(["led_state" => "ON"]); //[cite: 12]
 } else {
-    echo json_encode(["led_state" => "OFF"]);
+    echo json_encode(["led_state" => "OFF"]); //[cite: 12]
 }
 ?>
