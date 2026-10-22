@@ -24,7 +24,7 @@ $pharma_host     = "aws-0-ap-northeast-1.pooler.supabase.com";
 $pharma_port     = "6543"; // Changed to 6543 for Supabase pooler
 $pharma_database = "postgres";
 $pharma_user     = "postgres.juobkaftyrzlxbviudpy";              
-$pharma_password = "pharmaconnect12345@"; // Replace with your actual PharmaConnect DB password if different
+$pharma_password = "caresync12345@"; // Replace with your actual PharmaConnect DB password if different
 
 $pharma_conn_str = "host={$pharma_host} port={$pharma_port} dbname={$pharma_database} user={$pharma_user} password={$pharma_password} sslmode=require";
 $pharma_dbconn = @pg_connect($pharma_conn_str);
