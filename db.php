@@ -24,7 +24,7 @@ $pharma_host     = "aws-0-ap-northeast-1.pooler.supabase.com";
 $pharma_port     = "5432";
 $pharma_database = "postgres";
 $pharma_user     = "postgres.juobkaftyrzlxbviudpy";              
-$pharma_password = "pharmaconnect12345@"; // Replace with your actual PharmaConnect database password if different
+$pharma_password = "pharmaconnect12345@"; 
 
 $pharma_conn_str = "host={$pharma_host} port={$pharma_port} dbname={$pharma_database} user={$pharma_user} password={$pharma_password} sslmode=require";
 $pharma_dbconn = @pg_connect($pharma_conn_str);
@@ -34,7 +34,7 @@ if ($pharma_dbconn) {
 }
 
 // ==========================================
-// 3. DATABASE WRAPPER CLASSES
+// 3. DATABASE WRAPPER CLASSES (PHP 7 & 8+ Compatible)
 // ==========================================
 if (!class_exists('DBWrapper')) {
     class DBWrapper {
@@ -47,6 +47,8 @@ if (!class_exists('DBWrapper')) {
             if (!$this->conn) return null;
             $res = @pg_query($this->conn, $sql);
             if (!$res) {
+                // Helps identify failing SQL statements immediately
+                error_log("SQL Error: " . pg_last_error($this->conn) . " on query: " . $sql);
                 return null;
             }
             return new ResultWrapper($res);
@@ -65,22 +67,30 @@ if (!class_exists('ResultWrapper')) {
 
         public function __construct($r) {
             $this->res = $r;
-            $this->num_rows = ($r && is_resource($r)) ? pg_num_rows($r) : 0;
+            // Works across both PHP 7 (resource) and PHP 8+ (PgSql\Result object)
+            if ($r && (is_resource($r) || (is_object($r) && get_class($r) === 'PgSql\Result'))) {
+                $this->num_rows = pg_num_rows($r);
+            } else {
+                $this->num_rows = 0;
+            }
         }
 
         public function fetch_assoc() {
-            return ($this->res && is_resource($this->res)) ? pg_fetch_assoc($this->res) : null;
+            if ($this->res && (is_resource($this->res) || (is_object($this->res) && get_class($this->res) === 'PgSql\Result'))) {
+                $row = pg_fetch_assoc($this->res);
+                return ($row !== false) ? $row : null;
+            }
+            return null;
         }
 
         public function data_seek($row) {
-            if ($this->res && is_resource($this->res) && $this->num_rows > 0) {
+            if ($this->res && (is_resource($this->res) || (is_object($this->res) && get_class($this->res) === 'PgSql\Result')) && $this->num_rows > 0) {
                 @pg_result_seek($this->res, $row);
             }
         }
     }
 }
 
-// Global connections available to index.php, login.php, register.php
 $conn = new DBWrapper($dbconn);
 $pharma_conn = $pharma_dbconn ? new DBWrapper($pharma_dbconn) : null;
 ?>
