@@ -832,7 +832,7 @@ function formatDateTime($datetime) {
                                     </div>
                                     <?php if ($task['task_type'] === 'Medicine'): ?>
                                         <button type="button" class="btn-action-find find-med-btn" onclick="findNearestPharmacies('<?php echo addslashes($task['title']); ?>')">
-                                            <i class="fas fa-map-marker-alt"></i> Find Medicine
+                                            <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
                                         </button>
                                     <?php endif; ?>
                                 </div>
