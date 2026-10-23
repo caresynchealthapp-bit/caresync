@@ -367,11 +367,11 @@ function formatDateTime($datetime) {
         </ul>
 
         <!-- Sidebar User ID Footer Box -->
-        <div style="margin-top: auto; padding: 14px 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+        <div style="margin-top: auto; padding: 14px 16px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b;">
             <div style="font-weight: 600; color: #334155; margin-bottom: 4px;"><i class="fas fa-id-badge"></i> Your Account ID</div>
             <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <code style="color: #0f172a; font-weight: 700; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($user_id); ?></code>
-                <button type="button" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 13px;" title="Copy User ID">
+                <button type="button" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 14px;" title="Copy User ID">
                     <i class="far fa-copy"></i>
                 </button>
             </div>
