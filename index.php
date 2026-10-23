@@ -923,7 +923,7 @@ function formatDateTime($datetime) {
                                     echo "</div>";
                                     if ($task['task_type'] === 'Medicine') {
                                         $safeTitle = addslashes($task['title']);
-                                        echo "<button type='button' class='btn-action-find find-med-btn' onclick=\"findNearestPharmacies('{$safeTitle}')\"><i class='fas fa-map-marker-alt'></i> Find Medicine</button>";
+                                        echo "<button type='button' class='btn-action-find find-med-btn' onclick=\"findNearestPharmacies('{$safeTitle}')\"><i class='fas fa-map-marker-alt'></i> Find a Pharmacy</button>";
                                     }
                                     echo "</div>";
                                 }
