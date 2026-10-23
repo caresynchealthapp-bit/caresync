@@ -198,7 +198,7 @@ function formatDateTime($datetime) {
             color: #475569;
             padding: 6px 12px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 600;
             border: 1px solid #cbd5e1;
             cursor: pointer;
@@ -385,7 +385,7 @@ function formatDateTime($datetime) {
                 <!-- Clickable User ID Badge in Header -->
                 <div class="user-id-badge" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" title="Click to copy your User ID">
                     <i class="fas fa-fingerprint"></i>
-                    <span>ID: <?php echo htmlspecialchars($user_id); ?></span>
+                    <span>USER ID: <?php echo htmlspecialchars($user_id); ?></span>
                     <i class="far fa-copy" style="font-size: 11px; opacity: 0.7;"></i>
                 </div>
 
