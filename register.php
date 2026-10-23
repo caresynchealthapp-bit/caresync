@@ -1,5 +1,4 @@
 <?php
-// Set persistent cookie lifetime (1 year) so sessions stay alive across browser restarts
 session_set_cookie_params([
     'lifetime' => 31536000,
     'path'     => '/',
@@ -20,7 +19,6 @@ function is_valid_email_domain($email) {
 
     $domain = strtolower(substr(strrchr($email, "@"), 1));
 
-    // Block common dummy and disposable temporary domains
     $blacklisted_domains = [
         'fake.com', 'test.com', 'example.com', 'tempmail.com', 
         'mailinator.com', 'guerrillamail.com', '10minutemail.com', 
@@ -31,7 +29,6 @@ function is_valid_email_domain($email) {
         return false;
     }
 
-    // Trailing dot prevents Linux DNS resolver search domain appending in Docker
     $fqdn = $domain . '.';
     return checkdnsrr($fqdn, 'MX') || checkdnsrr($fqdn, 'A');
 }
@@ -42,25 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
 
-    // 1. Check if passwords match
     if ($password !== $confirm_password) {
         $error_message = "Passwords do not match!";
     } 
-    // 2. Validate email structure and domain deliverability
     elseif (!is_valid_email_domain($email)) {
         $error_message = "Email is incorrect or inactive. Please enter a real email address.";
     } 
     else {
         $safe_email = $conn->real_escape_string($email);
 
-        // 3. Check if the email already exists in the database
         $check_sql = "SELECT id FROM users WHERE email = '$safe_email'";
         $check_result = $conn->query($check_sql);
 
         if ($check_result && $check_result->num_rows > 0) {
             $error_message = "An account with this email already exists.";
         } else {
-            // 4. Encrypt password and insert
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $safe_name = $conn->real_escape_string($name);
 
@@ -84,24 +77,79 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register | CareSync</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --primary-dark: #1d4ed8; --text-dark: #1e293b; --text-gray: #64748b; --bg-gray: #f8fafc; --white: #ffffff; --border: #e2e8f0; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background-color: var(--bg-gray); display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--text-dark); padding: 20px;}
-        .login-container { background-color: var(--white); padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); width: 100%; max-width: 450px; border: 1px solid var(--border); }
-        .brand { text-align: center; font-size: 28px; font-weight: bold; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .subtitle { text-align: center; color: var(--text-gray); margin-bottom: 24px; font-size: 14px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
-        .form-group input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 14px; }
-        .form-group input:focus { border-color: var(--primary); }
-        .login-btn { width: 100%; padding: 12px; background-color: var(--primary); color: var(--white); border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        .login-btn:hover { background-color: var(--primary-dark); }
-        .error-message { color: #ef4444; font-size: 13px; text-align: center; margin-bottom: 16px; background-color: #fee2e2; padding: 10px; border-radius: 6px;}
-        .footer-link { text-align: center; margin-top: 20px; font-size: 14px; color: var(--text-gray); }
-        .footer-link a { color: var(--primary); text-decoration: none; font-weight: bold; }
-        .footer-link a:hover { text-decoration: underline; }
+        :root { --cs-primary: #2563eb; --cs-teal: #0d9488; --cs-text-main: #0f172a; --cs-text-muted: #64748b; --cs-border: #e2e8f0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: radial-gradient(circle at top right, #eff6ff 0%, #f8fafc 45%, #f0fdf4 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; color: var(--cs-text-main); padding: 20px;}
+        
+        .login-container { 
+            background-color: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(12px);
+            padding: 44px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.1); 
+            width: 100%; 
+            max-width: 450px; 
+            border: 1px solid rgba(255,255,255,0.6); 
+        }
+        .brand { 
+            text-align: center; 
+            font-size: 26px; 
+            font-weight: 800; 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            background: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .brand i {
+            background: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
+            color: #fff;
+            -webkit-text-fill-color: #fff;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+        .subtitle { text-align: center; color: var(--cs-text-muted); margin-bottom: 32px; font-size: 14.5px; font-weight: 500; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 13.5px; color: #334155; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; font-size: 14px; font-family: inherit; background: #f8fafc; transition: all 0.2s ease; }
+        .form-group input:focus { border-color: var(--cs-primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); background: #fff; }
+        
+        .login-btn { 
+            width: 100%; 
+            padding: 14px; 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: #fff; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+        .login-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
+        
+        .error-message { color: #dc2626; font-size: 13.5px; font-weight: 600; text-align: center; margin-bottom: 20px; background-color: #fef2f2; padding: 12px; border-radius: 10px; border: 1px solid #fecaca; }
+        
+        .footer-link { text-align: center; margin-top: 24px; font-size: 14px; color: var(--cs-text-muted); font-weight: 500; }
+        .footer-link a { color: var(--cs-primary); text-decoration: none; font-weight: 700; transition: color 0.2s; }
+        .footer-link a:hover { color: #1e3a8a; }
     </style>
     <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
 </head>
