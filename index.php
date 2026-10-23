@@ -386,7 +386,7 @@ function formatDateTime($datetime) {
                 <div class="user-id-badge" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" title="Click to copy your User ID">
                     <i class="fas fa-fingerprint"></i>
                     <span>USER ID: <?php echo htmlspecialchars($user_id); ?></span>
-                    <i class="far fa-copy" style="font-size: 11px; opacity: 0.7;"></i>
+                    <i class="far fa-copy" style="font-size: 13px; opacity: 0.7;"></i>
                 </div>
 
                 <button id="desktop-bell-btn" class="notification-btn" style="background:none; border:none; font-size:22px; color:var(--text-gray); margin-right:20px; cursor:pointer;" title="Enable Notifications">
