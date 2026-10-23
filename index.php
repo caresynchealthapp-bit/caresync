@@ -800,11 +800,11 @@ function formatDateTime($datetime) {
                                     <form action="index.php" method="POST" class="task-actions-group" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px;">
                                         <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
                                         <button type="submit" class="btn-action-done">
-                                            <i class="fas fa-check"></i> Mark Done
+                                            <i class="fas fa-check"></i> Done
                                         </button>
                                         <?php if ($task['task_type'] === 'Medicine'): ?>
                                             <button type="button" class="btn-action-find find-med-btn" onclick="findNearestPharmacies('<?php echo addslashes($task['title']); ?>')">
-                                                <i class="fas fa-map-marker-alt"></i> Find Medicine
+                                                <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
                                             </button>
                                         <?php endif; ?>
                                     </form>
@@ -984,7 +984,7 @@ function formatDateTime($datetime) {
                                                autocomplete="off"
                                                oninput="handleMedicineInput(this)">
                                         <button type="button" class="btn-action-find find-med-btn" style="white-space: nowrap;" onclick="findNearestPharmacies(this.previousElementSibling.value)">
-                                            <i class="fas fa-map-marker-alt"></i> Check Stock
+                                            <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
                                         </button>
                                     </div>
                                     <div class="med-suggestions-box" style="display: none;"></div>
