@@ -1031,6 +1031,27 @@ function formatDateTime($datetime) {
 
     <div id="toast-container" class="toast-container"></div>
 
+    <footer class="cs-footer">
+    <div class="cs-footer-container">
+        <div class="cs-brand">
+            <img src="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg" alt="CareSync Logo" class="cs-logo">
+            <span class="cs-brand-name">CareSync</span>
+        </div>
+        
+        <div class="cs-powered">
+            <span class="cs-powered-text">Powered by</span>
+            <svg class="supabase-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.9997 2.25L4.54228 15.1765C4.24925 15.6845 4.61453 16.3267 5.20235 16.3267H10.4997V21.75L17.9572 8.82353C18.2502 8.31553 17.8849 7.67333 17.2971 7.67333H11.9997V2.25Z" fill="#3ECF8E"/>
+            </svg>
+            <span class="cs-supabase-text">Supabase</span>
+        </div>
+    </div>
+    
+    <div class="cs-copyright">
+        &copy; 2026 Codecrafters. All rights reserved.
+    </div>
+</footer>
+
     <script>
         const todayTasks = <?php echo json_encode($dashboard_today); ?>;
         const availableMedicines = <?php echo json_encode($medicines_list); ?>;

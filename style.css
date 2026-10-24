@@ -356,3 +356,76 @@ body {
         max-width: none;
     }
 }
+
+.cs-footer {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 1.5rem 2rem;
+    margin-top: auto;
+}
+
+.cs-footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.cs-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cs-logo {
+    height: 32px;
+    width: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.cs-brand-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.cs-powered {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8fafc;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.cs-powered-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.cs-supabase-text {
+    font-size: 0.85rem;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.supabase-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.cs-copyright {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 1rem;
+    font-weight: 500;
+}
