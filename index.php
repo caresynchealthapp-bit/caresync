@@ -1014,24 +1014,8 @@ function formatDateTime($datetime) {
             <?php } ?>
 
         </div>
-    </main>
 
-    <!-- NEAREST PHARMACIES RESULTS MODAL -->
-    <div id="pharma-finder-modal" class="pharma-modal-backdrop" onclick="if(event.target === this) closePharmaModal()">
-        <div class="pharma-modal-card">
-            <div class="pharma-modal-header">
-                <h3 id="pharma-modal-title"><i class="fas fa-mortar-pestle"></i> Live Pharmacy Stock Finder</h3>
-                <button type="button" class="pharma-modal-close" onclick="closePharmaModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div id="pharma-modal-body" class="pharma-modal-body"></div>
-        </div>
-    </div>
-
-    <div id="toast-container" class="toast-container"></div>
-
-    <footer class="cs-footer">
+        <footer class="cs-footer">
     <div class="cs-footer-container">
         <div class="cs-brand">
             <img src="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg" alt="CareSync Logo" class="cs-logo">
@@ -1051,6 +1035,23 @@ function formatDateTime($datetime) {
         &copy; 2026 Codecrafters. All rights reserved.
     </div>
 </footer>
+
+    </main>
+
+    <!-- NEAREST PHARMACIES RESULTS MODAL -->
+    <div id="pharma-finder-modal" class="pharma-modal-backdrop" onclick="if(event.target === this) closePharmaModal()">
+        <div class="pharma-modal-card">
+            <div class="pharma-modal-header">
+                <h3 id="pharma-modal-title"><i class="fas fa-mortar-pestle"></i> Live Pharmacy Stock Finder</h3>
+                <button type="button" class="pharma-modal-close" onclick="closePharmaModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="pharma-modal-body" class="pharma-modal-body"></div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
 
     <script>
         const todayTasks = <?php echo json_encode($dashboard_today); ?>;
