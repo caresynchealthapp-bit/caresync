@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
 
     <div class="login-container">
         <div class="brand">
-            <i class="fas fa-heartbeat"></i> CareSync
+            <img src="Firefly.png" alt="CareSync Logo" class="cs-logo"> CareSync
         </div>
         <div class="subtitle">Create a new account to manage your family's health</div>
 

@@ -716,7 +716,7 @@ function formatDateTime($datetime) {
             <li class="nav-item" onclick="window.location.href='about.php'">
                 <i class="fas fa-info-circle"></i> About Us
             </li>
-            <li class="nav-item" onclick="window.location.href='support.php'">
+            <li class="nav-item" onclick="window.location.href='about.php'">
                 <i class="fas fa-headset"></i> Support
             </li>
         </ul>
@@ -749,7 +749,7 @@ function formatDateTime($datetime) {
                 </button>
                 <div class="user-profile" style="display:flex; align-items:center; gap:12px;">
                     <span class="user-name" style="font-weight:700; color:#1e293b;"><i class="fas fa-user-circle" style="color:var(--cs-primary);"></i> <?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
-                    <a href="logout.php" class="logout-btn" style="font-weight:700; border-radius:10px; padding:8px 14px;"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
+                    <a href="logout.php" class="logout-btn" style="font-weight:700; color:red; border-radius:10px; padding:8px 14px;"><i class="fas fa-sign-out-alt"></i> Sign Out</a>
                 </div>
             </div>
         </header>

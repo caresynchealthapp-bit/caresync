@@ -169,16 +169,7 @@ if (!isset($_SESSION['user_id'])) {
     <nav class="navbar">
         <a href="index.php" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
         <div style="font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="height: 28px; width: 28px;">
-                <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
-                <path d="M8 16.5L12 16.5L14.5 11L18 22.5L20.5 16.5L24 16.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <defs>
-                    <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#2563eb"/>
-                        <stop stop-color="#0d9488" offset="1"/>
-                    </linearGradient>
-                </defs>
-            </svg>
+            <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
             CareSync
         </div>
     </nav>
