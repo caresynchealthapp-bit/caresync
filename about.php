@@ -162,6 +162,16 @@ if (!isset($_SESSION['user_id'])) {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        .cs-logo {
+    height: 32px;
+    width: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    /* Add these rendering rules */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transform: translateZ(0);
+}
     </style>
 </head>
 <body>

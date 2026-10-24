@@ -119,6 +119,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
         .footer-link { text-align: center; margin-top: 24px; font-size: 14px; color: var(--cs-text-muted); font-weight: 500; }
         .footer-link a { color: var(--cs-primary); text-decoration: none; font-weight: 700; transition: color 0.2s; }
         .footer-link a:hover { color: #1e3a8a; }
+        .cs-logo {
+    height: 32px;
+    width: 32px;
+    border-radius: 8px;
+    object-fit: cover;
+    /* Add these rendering rules */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transform: translateZ(0);
+}
     </style>
     <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
 </head>
