@@ -692,7 +692,7 @@ function formatDateTime($datetime) {
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <aside class="sidebar" id="app-sidebar">
-        <div class="brand desktop-brand"><img src="Firefly.jpg" alt="CareSync Logo" class="cs-logo"> CareSync</div>
+        <div class="brand desktop-brand"><img src="Firefly.png" alt="CareSync Logo" class="cs-logo"> CareSync</div>
         <ul class="nav-list" id="nav-list">
             <li class="nav-item active" onclick="switchView('dashboard', this, 'Family Overview'); closeMobileMenu();">
                 <i class="fas fa-th-large"></i> Main Dashboard
@@ -1026,7 +1026,7 @@ function formatDateTime($datetime) {
     <div class="cs-footer-container">
         <div class="cs-brand-wrapper">
             <div class="cs-brand">
-                <img src="Firefly.jpg" alt="CareSync Logo" class="cs-logo">
+                <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
                 <span class="cs-brand-name">CareSync</span>
             </div>
             <!-- Added description line -->
