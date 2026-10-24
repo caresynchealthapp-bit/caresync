@@ -73,6 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
     exit();
 }
 
+// --- 5. HANDLE DELETING TASK ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_task_id'])) {
+    $task_id = (int)$_POST['delete_task_id'];
+    // Ensure the task belongs to a member owned by this user for security
+    $conn->query("DELETE FROM tasks WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id')");
+    header("Location: index.php");
+    exit();
+}
+
 // --- DATA FETCHING ---
 $members_list = [];
 $members_res = $conn->query("SELECT * FROM members WHERE user_id = '$user_id' ORDER BY id ASC");
@@ -804,17 +813,30 @@ function formatDateTime($datetime) {
                                         <?php endif; ?>
                                     </div>
 
-                                    <form action="index.php" method="POST" class="task-actions-group" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px;">
-                                        <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
-                                        <button type="submit" class="btn-action-done">
-                                            <i class="fas fa-check"></i> Done
-                                        </button>
-                                        <?php if ($task['task_type'] === 'Medicine'): ?>
-                                            <button type="button" class="btn-action-find find-med-btn" onclick="findNearestPharmacies('<?php echo addslashes($task['title']); ?>')">
-                                                <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
-                                            </button>
-                                        <?php endif; ?>
-                                    </form>
+                                    <div class="task-actions-group" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px;">
+                                                <!-- 1. Done Button Form -->
+                                                <form action="index.php" method="POST" style="margin:0;">
+                                                    <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
+                                                    <button type="submit" class="btn-action-done">
+                                                        <i class="fas fa-check"></i> Done
+                                                    </button>
+                                                </form>
+
+                                                <!-- 2. Delete Button Form (Moved to middle) -->
+                                                <form action="index.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this scheduled task?');">
+                                                    <input type="hidden" name="delete_task_id" value="<?php echo $task['id']; ?>">
+                                                    <button type="submit" class="btn-danger" style="background: #ef4444; color: #ffffff; border: none; padding: 9px 15px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </form>
+
+                                                <!-- 3. Find Pharmacy Button -->
+                                                <?php if ($task['task_type'] === 'Medicine'): ?>
+                                                    <button type="button" class="btn-action-find find-med-btn" onclick="findNearestPharmacies('<?php echo addslashes($task['title']); ?>')">
+                                                        <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
