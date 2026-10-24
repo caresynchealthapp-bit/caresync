@@ -712,6 +712,13 @@ function formatDateTime($datetime) {
             <li class="nav-item" style="color: var(--cs-primary); margin-top: 8px; border: 1px dashed #bfdbfe; background: #f8fafc;" onclick="switchView('add-new-member', this, 'Add Family Member'); closeMobileMenu();">
                 <i class="fas fa-user-plus"></i> Add Family Member
             </li>
+            <div class="section-title" style="padding: 16px 20px 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; color: #94a3b8; text-transform: uppercase; margin-top: 10px;">System & Info</div>
+            <li class="nav-item" onclick="window.location.href='about.php'">
+                <i class="fas fa-info-circle"></i> About Us
+            </li>
+            <li class="nav-item" onclick="window.location.href='support.php'">
+                <i class="fas fa-headset"></i> Support
+            </li>
         </ul>
 
         <!-- Sleek Dark Sidebar Account ID Box -->
