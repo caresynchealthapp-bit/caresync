@@ -1017,9 +1017,13 @@ function formatDateTime($datetime) {
 
         <footer class="cs-footer">
     <div class="cs-footer-container">
-        <div class="cs-brand">
-            <img src="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg" alt="CareSync Logo" class="cs-logo">
-            <span class="cs-brand-name">CareSync</span>
+        <div class="cs-brand-wrapper">
+            <div class="cs-brand">
+                <img src="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg" alt="CareSync Logo" class="cs-logo">
+                <span class="cs-brand-name">CareSync</span>
+            </div>
+            <!-- Added description line -->
+            <div class="cs-brand-tagline">Family Health Tracking & Prescription Management System.</div>
         </div>
         
         <div class="cs-powered">

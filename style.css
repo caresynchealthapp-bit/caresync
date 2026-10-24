@@ -429,3 +429,22 @@ body {
     margin-top: 1rem;
     font-weight: 500;
 }
+
+.cs-brand-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem; /* Controls spacing between the logo row and the description */
+}
+
+.cs-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cs-brand-tagline {
+    font-size: 0.85rem;
+    color: #64748b; /* Soft slate grey to match the glassmorphic theme */
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
