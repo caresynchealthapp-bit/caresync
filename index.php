@@ -672,7 +672,7 @@ function formatDateTime($datetime) {
             .btn-directions { width: 100%; justify-content: center; box-sizing: border-box; }
         }
     </style>
-    <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
+    <link rel="icon" type="image/png" href="Firefly.png">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -692,7 +692,7 @@ function formatDateTime($datetime) {
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <aside class="sidebar" id="app-sidebar">
-        <div class="brand desktop-brand"><i class="fas fa-heartbeat"></i> CareSync</div>
+        <div class="brand desktop-brand"><img src="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg" alt="CareSync Logo" class="cs-logo"> CareSync</div>
         <ul class="nav-list" id="nav-list">
             <li class="nav-item active" onclick="switchView('dashboard', this, 'Family Overview'); closeMobileMenu();">
                 <i class="fas fa-th-large"></i> Main Dashboard

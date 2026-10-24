@@ -386,6 +386,10 @@ body {
     width: 32px;
     border-radius: 8px;
     object-fit: cover;
+    /* Add these rendering rules */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transform: translateZ(0);
 }
 
 .cs-brand-name {
