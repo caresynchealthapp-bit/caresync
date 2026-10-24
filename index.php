@@ -1345,6 +1345,25 @@ function formatDateTime($datetime) {
                 document.querySelectorAll('.med-suggestions-box').forEach(b => b.style.display = 'none');
             }
         });
+
+        // Custom Delete Modal Logic
+            let formToSubmitId = null;
+
+            function openDeleteModal(formId) {
+                formToSubmitId = formId;
+                document.getElementById('delete-confirm-modal').classList.add('active');
+            }
+
+            function closeDeleteModal() {
+                formToSubmitId = null;
+                document.getElementById('delete-confirm-modal').classList.remove('active');
+            }
+
+            document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+                if (formToSubmitId) {
+                    document.getElementById(formToSubmitId).submit();
+                }
+            });
     </script>
     <script src="script.js"></script>
 </body>
