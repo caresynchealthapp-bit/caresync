@@ -162,15 +162,6 @@ if (!isset($_SESSION['user_id'])) {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .leader-badge {
-            color: #d97706;
-            background: #fef3c7;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
     </style>
 </head>
 <body>
@@ -194,7 +185,7 @@ if (!isset($_SESSION['user_id'])) {
 
     <div class="container">
         <div class="hero-section">
-            <h1>Engineered by Codecrafters</h1>
+            <h1>UG(UOM)ed by Codecrafters</h1>
             <p>CareSync is a unified family health tracking and prescription management platform designed to integrate seamlessly with the PharmaConnect real-time POS and GRN infrastructure.</p>
         </div>
 
@@ -204,33 +195,24 @@ if (!isset($_SESSION['user_id'])) {
             </div>
             
             <p style="color: var(--cs-text-muted); font-size: 15px; margin-bottom: 32px; line-height: 1.6;">
-                Developed as a comprehensive engineering group project. Directed by Anuhas Nimasara, our dedicated team of undergraduate engineers built this cloud-based system to bridge the gap between pharmacy inventory logistics and everyday family health monitoring.
+                Developed as a comprehensive UG(UOM)ing group project. Directed by Anuhas Nimasara, our dedicated team of undergraduate UG(UOM)s built this cloud-based system to bridge the gap between pharmacy inventory logistics and everyday family health monitoring.
             </p>
 
             <h3 style="text-align: left; margin: 0 0 16px 0; font-weight: 800; font-size: 1.1rem; color: var(--cs-text-main); border-bottom: 2px solid var(--cs-border); padding-bottom: 12px;">
-                <i class="fas fa-code-branch" style="color: var(--cs-primary); margin-right: 6px;"></i> The Engineering Team
+                <i class="fas fa-code-branch" style="color: var(--cs-primary); margin-right: 6px;"></i> CODECRAFTERS
             </h3>
             
             <div class="team-grid">
-                <!-- Group Leader -->
-                <div class="team-member">
-                    <div class="member-icon"><i class="fas fa-user-astronaut"></i></div>
-                    <div class="member-info">
-                        <span class="member-id">250322M <span class="leader-badge">LEAD</span></span>
-                        <span class="member-role">Anuhas Nimasara</span>
-                    </div>
-                </div>
-                
-                <!-- Team Members -->
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250295F</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250384D</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250296J</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250016E</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250734D</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250525M</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250283R</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250292T</span><span class="member-role">Engineer</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250070L</span><span class="member-role">Engineer</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250322M</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250295F</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250384D</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250296J</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250016E</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250734D</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250525M</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250283R</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250292T</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250070L</span><span class="member-role">UG(UOM)</span></div></div>
             </div>
         </div>
     </div>
