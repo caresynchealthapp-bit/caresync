@@ -196,7 +196,7 @@ if (!isset($_SESSION['user_id'])) {
             </div>
             
             <p style="color: var(--cs-text-muted); font-size: 15px; margin-bottom: 32px; line-height: 1.6;">
-                Developed as a comprehensive UG(UOM)ing group project. Directed by Anuhas Nimasara, our dedicated team of undergraduate UG(UOM)s built this cloud-based system to bridge the gap between pharmacy inventory logistics and everyday family health monitoring.
+                Developed as a comprehensive engineering group project. Our dedicated team of undergraduate engineers built this cloud-based system to bridge the gap between pharmacy inventory logistics and everyday family health monitoring.
             </p>
 
             <h3 style="text-align: left; margin: 0 0 16px 0; font-weight: 800; font-size: 1.1rem; color: var(--cs-text-main); border-bottom: 2px solid var(--cs-border); padding-bottom: 12px;">
