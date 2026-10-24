@@ -823,10 +823,10 @@ function formatDateTime($datetime) {
                                                 </form>
 
                                                 <!-- 2. Delete Button Form (Moved to middle) -->
-                                                <form action="index.php" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this scheduled task?');">
+                                                <form id="delete-form-<?php echo $task['id']; ?>" action="index.php" method="POST" style="margin:0;">
                                                     <input type="hidden" name="delete_task_id" value="<?php echo $task['id']; ?>">
-                                                    <button type="submit" class="btn-danger" style="background: #ef4444; color: #ffffff; border: none; padding: 9px 15px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);">
-                                                        <i class="fas fa-trash-alt"></i>
+                                                    <button type="button" onclick="openDeleteModal('delete-form-<?php echo $task['id']; ?>')" class="btn-danger" style="background: #ef4444; color: #ffffff; border: none; padding: 9px 15px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);">
+                                                        <i class="fas fa-trash-alt"></i>Delete
                                                     </button>
                                                 </form>
 
@@ -1070,6 +1070,26 @@ function formatDateTime($datetime) {
 </footer>
 
     </main>
+
+    <!-- CUSTOM DELETE CONFIRMATION MODAL -->
+    <div id="delete-confirm-modal" class="pharma-modal-backdrop" onclick="if(event.target === this) closeDeleteModal()">
+        <div class="pharma-modal-card" style="max-width: 380px; text-align: center; padding: 32px 24px; border-radius: 24px;">
+            <div style="width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px;">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Delete Scheduled Task?</h3>
+            <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b; line-height: 1.5;">This action cannot be undone. Are you sure you want to permanently remove this schedule?</p>
+            
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button type="button" onclick="closeDeleteModal()" style="padding: 10px 20px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-delete-btn" style="padding: 10px 20px; border-radius: 12px; border: none; background: #ef4444; color: #ffffff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.2s;">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- NEAREST PHARMACIES RESULTS MODAL -->
     <div id="pharma-finder-modal" class="pharma-modal-backdrop" onclick="if(event.target === this) closePharmaModal()">
