@@ -185,7 +185,7 @@ if (!isset($_SESSION['user_id'])) {
 
     <div class="container">
         <div class="hero-section">
-            <h1>UG(UOM)ed by Codecrafters</h1>
+            <h1>Engineered by Codecrafters</h1>
             <p>CareSync is a unified family health tracking and prescription management platform designed to integrate seamlessly with the PharmaConnect real-time POS and GRN infrastructure.</p>
         </div>
 
