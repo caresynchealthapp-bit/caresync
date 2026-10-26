@@ -1046,46 +1046,70 @@ function formatDateTime($datetime) {
         </div>
 
         <footer id="cs-footer-support" class="cs-footer">
-    <div class="cs-footer-container">
-        <!-- Left: Brand & Tagline -->
-        <div class="cs-brand-wrapper">
-            <div class="cs-brand">
-                <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
-                <span class="cs-brand-name">CareSync</span>
+    <div class="cs-footer-inner">
+        
+        <!-- ROW 1: Sleek Dedicated Support Strip -->
+        <div id="cs-support-highlight" class="cs-support-banner">
+            <div class="cs-support-header">
+                <div class="cs-support-badge-icon">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <div>
+                    <div class="cs-support-heading">24/7 CareSync Help & Support Desk</div>
+                    <div class="cs-support-subtext">Need help with family prescriptions or clinic schedules? Reach out directly.</div>
+                </div>
             </div>
-            <div class="cs-brand-tagline">Family Health Tracking & Prescription Management System.</div>
+
+            <div class="cs-support-actions">
+                <a href="tel:+94766260341" class="cs-contact-chip">
+                    <span class="cs-chip-icon"><i class="fa-solid fa-phone"></i></span>
+                    <div class="cs-chip-meta">
+                        <span class="cs-chip-label">Hotline 1</span>
+                        <span class="cs-chip-val">+94 76 626 0341</span>
+                    </div>
+                </a>
+
+                <a href="tel:+94777610332" class="cs-contact-chip">
+                    <span class="cs-chip-icon"><i class="fa-solid fa-phone"></i></span>
+                    <div class="cs-chip-meta">
+                        <span class="cs-chip-label">Hotline 2</span>
+                        <span class="cs-chip-val">+94 77 761 0332</span>
+                    </div>
+                </a>
+
+                <a href="mailto:caresync.healthapp@gmail.com" class="cs-contact-chip">
+                    <span class="cs-chip-icon"><i class="fa-solid fa-envelope"></i></span>
+                    <div class="cs-chip-meta">
+                        <span class="cs-chip-label">Official Email</span>
+                        <span class="cs-chip-val">caresync.healthapp@gmail.com</span>
+                    </div>
+                </a>
+            </div>
         </div>
 
-        <!-- Center: Support Contact Details -->
-        <div id="cs-support-highlight" class="cs-support-box">
-            <div class="cs-support-title">
-                <i class="fa-solid fa-headset"></i> 24/7 CareSync Support Desk
+        <!-- ROW 2: Original Clean Brand & Supabase Bar -->
+        <div class="cs-footer-bottom">
+            <div class="cs-brand-wrapper">
+                <div class="cs-brand">
+                    <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
+                    <span class="cs-brand-name">CareSync</span>
+                </div>
+                <div class="cs-brand-tagline">Family Health Tracking & Prescription Management System.</div>
             </div>
-            <div class="cs-support-links">
-                <a href="tel:+94766260341" class="cs-support-pill">
-                    <i class="fa-solid fa-phone"></i> +94 76 626 0341
-                </a>
-                <a href="tel:+94777610332" class="cs-support-pill">
-                    <i class="fa-solid fa-phone"></i> +94 77 761 0332
-                </a>
-                <a href="mailto:caresync.healthapp@gmail.com" class="cs-support-pill">
-                    <i class="fa-solid fa-envelope"></i> caresync.healthapp@gmail.com
-                </a>
+
+            <div class="cs-copyright">
+                &copy; 2026 Codecrafters. All rights reserved.
+            </div>
+
+            <div class="cs-powered">
+                <span class="cs-powered-text">Powered by</span>
+                <svg class="supabase-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.9997 2.25L4.54228 15.1765C4.24925 15.6845 4.61453 16.3267 5.20235 16.3267H10.4997V21.75L17.9572 8.82353C18.2502 8.31553 17.8849 7.67333 17.2971 7.67333H11.9997V2.25Z" fill="#3ECF8E"/>
+                </svg>
+                <span class="cs-supabase-text">Supabase</span>
             </div>
         </div>
-        
-        <!-- Right: Powered by Supabase -->
-        <div class="cs-powered">
-            <span class="cs-powered-text">Powered by</span>
-            <svg class="supabase-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11.9997 2.25L4.54228 15.1765C4.24925 15.6845 4.61453 16.3267 5.20235 16.3267H10.4997V21.75L17.9572 8.82353C18.2502 8.31553 17.8849 7.67333 17.2971 7.67333H11.9997V2.25Z" fill="#3ECF8E"/>
-            </svg>
-            <span class="cs-supabase-text">Supabase</span>
-        </div>
-    </div>
-    
-    <div class="cs-copyright">
-        &copy; 2026 Codecrafters. All rights reserved.
+
     </div>
 </footer>
 

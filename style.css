@@ -363,124 +363,184 @@ html {
 
 .cs-footer {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    background: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(226, 232, 240, 0.8);
-    padding: 1.5rem 2rem;
+    border-top: 1px solid #e2e8f0;
+    padding: 1.5rem 2rem 1.25rem;
     margin-top: auto;
-    transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
-.cs-footer-container {
+.cs-footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Row 1: Sleek Support Banner matching the CareSync Hero Gradient */
+.cs-support-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.35rem;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #f0fdfa 100%);
+    border: 1px solid #bae6fd;
+    transition: all 0.35s ease;
+}
+
+.cs-support-banner.support-active-glow {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.18);
+    transform: translateY(-2px);
+}
+
+.cs-support-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.cs-support-badge-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #0d9488);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(13, 148, 136, 0.2);
+}
+
+.cs-support-heading {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.cs-support-subtext {
+    font-size: 0.78rem;
+    color: #64748b;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.cs-support-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+.cs-footer a.cs-contact-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: #ffffff;
+    padding: 0.45rem 0.85rem 0.45rem 0.55rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    text-decoration: none !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    transition: all 0.2s ease;
+}
+
+.cs-footer a.cs-contact-chip:hover {
+    border-color: #0d9488;
+    background: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(13, 148, 136, 0.1);
+}
+
+.cs-chip-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #f0fdfa;
+    color: #0d9488;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.cs-chip-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.cs-chip-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.cs-chip-val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Row 2: Clean Bottom Bar */
+.cs-footer-bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1.25rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    gap: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f1f5f9;
 }
 
 .cs-brand-wrapper {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.25rem;
 }
 
 .cs-brand {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.65rem;
 }
 
 .cs-logo {
-    height: 32px;
-    width: 32px;
-    border-radius: 8px;
+    height: 28px;
+    width: 28px;
+    border-radius: 7px;
     object-fit: cover;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    transform: translateZ(0);
 }
 
 .cs-brand-name {
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: #0f172a;
     letter-spacing: -0.02em;
 }
 
 .cs-brand-tagline {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #64748b;
     font-weight: 500;
-    letter-spacing: 0.01em;
 }
 
-/* Support Box Styling */
-.cs-support-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.65rem 1rem;
-    border-radius: 14px;
-    background: rgba(248, 250, 252, 0.9);
-    border: 1px solid #e2e8f0;
-    transition: all 0.35s ease;
-}
-
-.cs-support-box.support-active-glow {
-    border-color: #0ea5e9;
-    background: #f0f9ff;
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
-    transform: translateY(-2px);
-}
-
-.cs-support-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #0284c7;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-.cs-support-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.cs-support-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
+.cs-copyright {
     font-size: 0.78rem;
-    font-weight: 600;
-    color: #1e293b;
-    background: #ffffff;
-    padding: 0.35rem 0.7rem;
-    border-radius: 999px;
-    border: 1px solid #cbd5e1;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-
-.cs-support-pill i {
-    color: #0d9488;
-    font-size: 0.75rem;
-}
-
-.cs-support-pill:hover {
-    border-color: #0d9488;
-    color: #0f766e;
-    background: #f0fdfa;
-    transform: translateY(-1px);
+    color: #94a3b8;
+    font-weight: 500;
 }
 
 .cs-powered {
@@ -488,7 +548,7 @@ html {
     align-items: center;
     gap: 0.5rem;
     background: #f8fafc;
-    padding: 0.4rem 0.8rem;
+    padding: 0.4rem 0.85rem;
     border-radius: 20px;
     border: 1px solid #e2e8f0;
 }
@@ -510,10 +570,10 @@ html {
     height: 16px;
 }
 
-.cs-copyright {
-    text-align: center;
-    font-size: 0.75rem;
-    color: #94a3b8;
-    margin-top: 1rem;
-    font-weight: 500;
+@media (max-width: 768px) {
+    .cs-support-banner,
+    .cs-footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
