@@ -1,8 +1,10 @@
 <?php
+// Fix: Dynamically set secure flag so sessions work on both localhost (HTTP) and Render (HTTPS)
+$is_secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 session_set_cookie_params([
     'lifetime' => 31536000,
     'path'     => '/',
-    'secure'   => true,
+    'secure'   => $is_secure,
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
@@ -12,7 +14,16 @@ require 'db.php';
 $error_message = "";
 $success_message = "";
 
-// Use the existing Google Apps Script endpoint to send emails
+// Capture redirect messages
+if (isset($_SESSION['flash_success'])) {
+    $success_message = $_SESSION['flash_success'];
+    unset($_SESSION['flash_success']);
+}
+if (isset($_SESSION['flash_error'])) {
+    $error_message = $_SESSION['flash_error'];
+    unset($_SESSION['flash_error']);
+}
+
 $google_script_url = 'https://script.google.com/macros/s/AKfycbzqVsoKCLbtcREInR9yRx5M48bW6N1sztBi4Mvrqt_brj1Cshfuh6hq4raqJEkSO8y9/exec';
 
 function is_valid_email_domain($email) {
@@ -25,9 +36,8 @@ function is_valid_email_domain($email) {
         'mailinator.com', 'guerrillamail.com', '10minutemail.com', 
         'throwawaymail.com', 'yopmail.com', 'sharklasers.com'
     ];
-    if (in_array($domain, $blacklisted_domains)) {
-        return false;
-    }
+    if (in_array($domain, $blacklisted_domains)) return false;
+    
     $fqdn = $domain . '.';
     return checkdnsrr($fqdn, 'MX') || checkdnsrr($fqdn, 'A');
 }
@@ -44,8 +54,6 @@ function sendOtpEmail($to_email, $otp, $google_script_url) {
             <tr>
                 <td align=\"center\">
                     <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width: 550px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);\">
-                        
-                        <!-- Header -->
                         <tr>
                             <td style=\"background-color: #2563eb; padding: 30px 40px; text-align: center;\">
                                 <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;\">
@@ -53,27 +61,20 @@ function sendOtpEmail($to_email, $otp, $google_script_url) {
                                 </h1>
                             </td>
                         </tr>
-                        
-                        <!-- Body -->
                         <tr>
                             <td style=\"padding: 40px 40px 30px; text-align: center;\">
                                 <h2 style=\"margin: 0 0 16px; font-size: 20px; color: #0f172a;\">Verify your email address</h2>
                                 <p style=\"margin: 0 0 32px; font-size: 15px; color: #475569; line-height: 1.6;\">
                                     Thank you for joining CareSync! Please use the following One-Time Password (OTP) to complete your family account registration.
                                 </p>
-                                
-                                <!-- OTP Box -->
                                 <div style=\"background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;\">
                                     <span style=\"font-size: 36px; font-weight: 700; color: #0d9488; letter-spacing: 8px;\">{$otp}</span>
                                 </div>
-                                
                                 <p style=\"margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.5;\">
                                     This code will expire in 15 minutes.<br>If you did not request this, please safely ignore this email.
                                 </p>
                             </td>
                         </tr>
-                        
-                        <!-- Footer -->
                         <tr>
                             <td style=\"background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center;\">
                                 <p style=\"margin: 0; font-size: 12px; color: #94a3b8;\">
@@ -82,7 +83,6 @@ function sendOtpEmail($to_email, $otp, $google_script_url) {
                                 </p>
                             </td>
                         </tr>
-                        
                     </table>
                 </td>
             </tr>
@@ -103,6 +103,7 @@ function sendOtpEmail($to_email, $otp, $google_script_url) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Fix: Prevents local XAMPP SSL failures
     
     $response  = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -111,18 +112,61 @@ function sendOtpEmail($to_email, $otp, $google_script_url) {
     return ($http_code == 200 || $http_code == 302);
 }
 
+// STEP 1: Process initial registration and send OTP
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register_step1'])) {
+    $name = trim($_POST['name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+
+    if ($password !== $confirm_password) {
+        $error_message = "Passwords do not match!";
+    } elseif (!is_valid_email_domain($email)) {
+        $error_message = "Email is incorrect or inactive. Please enter a real email address.";
+    } else {
+        $safe_email = $conn->real_escape_string($email);
+        $check_sql = "SELECT id FROM users WHERE email = '$safe_email'";
+        $check_result = $conn->query($check_sql);
+
+        if ($check_result && $check_result->num_rows > 0) {
+            $error_message = "An account with this email already exists.";
+        } else {
+            $otp = sprintf("%06d", mt_rand(100000, 999999));
+            
+            $_SESSION['pending_reg'] = [
+                'name' => $name,
+                'email' => $email,
+                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+                'otp' => $otp,
+                'otp_expires' => time() + (15 * 60)
+            ];
+
+            if (sendOtpEmail($email, $otp, $google_script_url)) {
+                $_SESSION['flash_success'] = "OTP sent successfully! Please check your inbox.";
+                $_SESSION['reg_step'] = 2; 
+                header("Location: register.php"); // Clean redirect to Step 2
+                exit();
+            } else {
+                $error_message = "Failed to send OTP email. Check your internet connection or email validity.";
+                unset($_SESSION['pending_reg']);
+            }
+        }
+    }
+}
+
 // STEP 2: Verify OTP and insert into Database
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['verify_otp'])) {
     $entered_otp = trim($_POST['otp'] ?? '');
     
     if (!isset($_SESSION['pending_reg']) || time() > $_SESSION['pending_reg']['otp_expires']) {
-        $error_message = "OTP has expired. Please restart the registration process.";
+        $_SESSION['flash_error'] = "OTP has expired. Please restart the registration process.";
         unset($_SESSION['pending_reg']);
         $_SESSION['reg_step'] = 1;
+        header("Location: register.php");
+        exit();
     } elseif ($entered_otp !== $_SESSION['pending_reg']['otp']) {
         $error_message = "Incorrect OTP. Please try again.";
     } else {
-        // OTP verified, create user
         $safe_name = $conn->real_escape_string($_SESSION['pending_reg']['name']);
         $safe_email = $conn->real_escape_string($_SESSION['pending_reg']['email']);
         $hashed_password = $_SESSION['pending_reg']['password_hash'];
@@ -140,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['verify_otp'])) {
     }
 }
 
-// Handle Cancel/Back button from OTP screen
+// Handle Cancel/Back button
 if (isset($_GET['cancel_otp'])) {
     unset($_SESSION['pending_reg']);
     $_SESSION['reg_step'] = 1;
@@ -148,7 +192,6 @@ if (isset($_GET['cancel_otp'])) {
     exit();
 }
 
-// Determine which step to show (1 = Initial Form, 2 = OTP Form)
 $current_step = $_SESSION['reg_step'] ?? 1;
 ?>
 
@@ -246,14 +289,17 @@ $current_step = $_SESSION['reg_step'] ?? 1;
             <?php endif; ?>
 
             <form action="register.php" method="POST">
+                <!-- Fix: Hidden input guarantees the POST action triggers even if submitted via Enter key -->
+                <input type="hidden" name="register_step1" value="1">
+                
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" name="name" placeholder="e.g. John Doe" required value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
+                    <input type="text" name="name" placeholder="e.g. John Doe" required value="<?php echo htmlspecialchars($_POST['name'] ?? ($_SESSION['pending_reg']['name'] ?? '')); ?>">
                 </div>
 
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" name="email" placeholder="email@example.com" required value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                    <input type="email" name="email" placeholder="email@example.com" required value="<?php echo htmlspecialchars($_POST['email'] ?? ($_SESSION['pending_reg']['email'] ?? '')); ?>">
                 </div>
 
                 <div class="form-group">
@@ -266,7 +312,7 @@ $current_step = $_SESSION['reg_step'] ?? 1;
                     <input type="password" name="confirm_password" placeholder="Type your password again" required minlength="6">
                 </div>
 
-                <button type="submit" name="register_step1" class="login-btn">Send OTP & Continue</button>
+                <button type="submit" class="login-btn">Send OTP & Continue</button>
             </form>
 
             <div class="footer-link">
@@ -290,12 +336,15 @@ $current_step = $_SESSION['reg_step'] ?? 1;
             <?php endif; ?>
 
             <form action="register.php" method="POST">
+                <!-- Fix: Hidden input guarantees the POST action triggers even if submitted via Enter key -->
+                <input type="hidden" name="verify_otp" value="1">
+                
                 <div class="form-group">
                     <label style="text-align: center;">One-Time Password (OTP)</label>
                     <input type="text" name="otp" class="otp-input" placeholder="000000" required maxlength="6" pattern="\d{6}" autofocus>
                 </div>
 
-                <button type="submit" name="verify_otp" class="login-btn">Verify Account</button>
+                <button type="submit" class="login-btn">Verify Account</button>
                 <a href="register.php?cancel_otp=true" style="text-decoration: none;">
                     <button type="button" class="login-btn btn-secondary">Change Email Address</button>
                 </a>
@@ -306,5 +355,3 @@ $current_step = $_SESSION['reg_step'] ?? 1;
 
 </body>
 </html>
-
-```
