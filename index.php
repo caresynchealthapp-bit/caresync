@@ -725,7 +725,7 @@ function formatDateTime($datetime) {
             <li class="nav-item" onclick="window.location.href='about.php'">
                 <i class="fas fa-info-circle"></i> About Us
             </li>
-            <li class="nav-item" onclick="window.location.href='about.php'">
+            <li class="nav-item" onclick="scrollToCareSyncSupport(event)">
                 <i class="fas fa-headset"></i> Support
             </li>
         </ul>
@@ -1044,17 +1044,36 @@ function formatDateTime($datetime) {
 
         </div>
 
-        <footer class="cs-footer">
+        <footer id="cs-footer-support" class="cs-footer">
     <div class="cs-footer-container">
+        <!-- Left: Brand & Tagline -->
         <div class="cs-brand-wrapper">
             <div class="cs-brand">
                 <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
                 <span class="cs-brand-name">CareSync</span>
             </div>
-            <!-- Added description line -->
             <div class="cs-brand-tagline">Family Health Tracking & Prescription Management System.</div>
         </div>
+
+        <!-- Center: Support Contact Details -->
+        <div id="cs-support-highlight" class="cs-support-box">
+            <div class="cs-support-title">
+                <i class="fa-solid fa-headset"></i> 24/7 CareSync Support Desk
+            </div>
+            <div class="cs-support-links">
+                <a href="tel:+94766260341" class="cs-support-pill">
+                    <i class="fa-solid fa-phone"></i> +94 76 626 0341
+                </a>
+                <a href="tel:+94777610332" class="cs-support-pill">
+                    <i class="fa-solid fa-phone"></i> +94 77 761 0332
+                </a>
+                <a href="mailto:caresync.healthapp@gmail.com" class="cs-support-pill">
+                    <i class="fa-solid fa-envelope"></i> caresync.healthapp@gmail.com
+                </a>
+            </div>
+        </div>
         
+        <!-- Right: Powered by Supabase -->
         <div class="cs-powered">
             <span class="cs-powered-text">Powered by</span>
             <svg class="supabase-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1364,6 +1383,23 @@ function formatDateTime($datetime) {
                     document.getElementById(formToSubmitId).submit();
                 }
             });
+
+            function scrollToCareSyncSupport(event) {
+    if (event) event.preventDefault();
+    const footer = document.getElementById('cs-footer-support');
+    const highlightBox = document.getElementById('cs-support-highlight');
+
+    if (footer) {
+        footer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+    if (highlightBox) {
+        highlightBox.classList.add('support-active-glow');
+        setTimeout(() => {
+            highlightBox.classList.remove('support-active-glow');
+        }, 2400);
+    }
+}
+
     </script>
     <script src="script.js"></script>
 </body>

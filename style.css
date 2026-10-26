@@ -357,22 +357,35 @@ body {
     }
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 .cs-footer {
     font-family: 'Plus Jakarta Sans', sans-serif;
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.75);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-top: 1px solid rgba(226, 232, 240, 0.8);
     padding: 1.5rem 2rem;
     margin-top: auto;
+    transition: box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
 .cs-footer-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.cs-brand-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
 .cs-brand {
@@ -386,7 +399,6 @@ body {
     width: 32px;
     border-radius: 8px;
     object-fit: cover;
-    /* Add these rendering rules */
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
     transform: translateZ(0);
@@ -397,6 +409,78 @@ body {
     font-size: 1.1rem;
     color: #0f172a;
     letter-spacing: -0.02em;
+}
+
+.cs-brand-tagline {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+/* Support Box Styling */
+.cs-support-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.65rem 1rem;
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid #e2e8f0;
+    transition: all 0.35s ease;
+}
+
+.cs-support-box.support-active-glow {
+    border-color: #0ea5e9;
+    background: #f0f9ff;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.2);
+    transform: translateY(-2px);
+}
+
+.cs-support-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.cs-support-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.cs-support-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1e293b;
+    background: #ffffff;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.cs-support-pill i {
+    color: #0d9488;
+    font-size: 0.75rem;
+}
+
+.cs-support-pill:hover {
+    border-color: #0d9488;
+    color: #0f766e;
+    background: #f0fdfa;
+    transform: translateY(-1px);
 }
 
 .cs-powered {
@@ -432,23 +516,4 @@ body {
     color: #94a3b8;
     margin-top: 1rem;
     font-weight: 500;
-}
-
-.cs-brand-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem; /* Controls spacing between the logo row and the description */
-}
-
-.cs-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.cs-brand-tagline {
-    font-size: 0.85rem;
-    color: #64748b; /* Soft slate grey to match the glassmorphic theme */
-    font-weight: 500;
-    letter-spacing: 0.01em;
 }
