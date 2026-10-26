@@ -725,8 +725,9 @@ function formatDateTime($datetime) {
             <li class="nav-item" onclick="window.location.href='about.php'">
                 <i class="fas fa-info-circle"></i> About Us
             </li>
-            <li class="nav-item" onclick="scrollToCareSyncSupport(event)">
-                <i class="fas fa-headset"></i> Support
+            <li> <a href="#cs-footer-support" onclick="scrollToCareSyncSupport(event)" class="nav-item">
+                    <i class="fa-solid fa-headset"></i> Support
+                </a>
             </li>
         </ul>
 
