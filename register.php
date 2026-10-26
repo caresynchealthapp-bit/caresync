@@ -161,7 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     transform: translateZ(0);
 }
     </style>
-    <link rel="icon" type="image/jpg" href="Gemini_Generated_Image_h1uw8kh1uw8kh1uw.jpg">
+    <link rel="icon" type="image/png" href="Firefly.png">
 </head>
 <body>
 

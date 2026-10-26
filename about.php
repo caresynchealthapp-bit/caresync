@@ -173,6 +173,7 @@ if (!isset($_SESSION['user_id'])) {
     transform: translateZ(0);
 }
     </style>
+    <link rel="icon" type="image/png" href="Firefly.png">
 </head>
 <body>
 
