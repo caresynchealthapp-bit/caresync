@@ -164,8 +164,8 @@ if (!isset($_SESSION['user_id'])) {
             display: block;
         }
 
-        .member-Uni {
-            font-size: 6px;
+        .member-uni {
+            font-size: 10px;
             color: var(--cs-text-muted);
             font-weight: 600;
             letter-spacing: 0.5px;
