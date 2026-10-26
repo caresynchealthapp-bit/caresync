@@ -33,16 +33,60 @@ function is_valid_email_domain($email) {
 }
 
 function sendOtpEmail($to_email, $otp, $google_script_url) {
-    $subject = "CareSync: Your Registration OTP";
+    $subject = "Your CareSync Verification Code";
+    $year = date('Y');
+    
     $htmlContent = "
+    <!DOCTYPE html>
     <html>
-    <body style='font-family: Arial, sans-serif; background-color: #f8fafc; padding: 20px; color: #1e293b;'>
-        <div style='max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;'>
-            <h2 style='color: #2563eb; margin-bottom: 20px;'>CareSync Registration</h2>
-            <p style='font-size: 16px;'>Your One-Time Password (OTP) to complete registration is:</p>
-            <h1 style='font-size: 36px; color: #0d9488; letter-spacing: 5px; margin: 20px 0;'>{$otp}</h1>
-            <p style='font-size: 14px; color: #64748b;'>This code will expire in 15 minutes. Do not share it with anyone.</p>
-        </div>
+    <body style=\"margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;\">
+        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color: #f1f5f9; padding: 40px 20px;\">
+            <tr>
+                <td align=\"center\">
+                    <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width: 550px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05);\">
+                        
+                        <!-- Header -->
+                        <tr>
+                            <td style=\"background-color: #2563eb; padding: 30px 40px; text-align: center;\">
+                                <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;\">
+                                    <span style=\"margin-right: 8px;\">💙</span>CareSync
+                                </h1>
+                            </td>
+                        </tr>
+                        
+                        <!-- Body -->
+                        <tr>
+                            <td style=\"padding: 40px 40px 30px; text-align: center;\">
+                                <h2 style=\"margin: 0 0 16px; font-size: 20px; color: #0f172a;\">Verify your email address</h2>
+                                <p style=\"margin: 0 0 32px; font-size: 15px; color: #475569; line-height: 1.6;\">
+                                    Thank you for joining CareSync! Please use the following One-Time Password (OTP) to complete your family account registration.
+                                </p>
+                                
+                                <!-- OTP Box -->
+                                <div style=\"background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 32px;\">
+                                    <span style=\"font-size: 36px; font-weight: 700; color: #0d9488; letter-spacing: 8px;\">{$otp}</span>
+                                </div>
+                                
+                                <p style=\"margin: 0; font-size: 13px; color: #94a3b8; line-height: 1.5;\">
+                                    This code will expire in 15 minutes.<br>If you did not request this, please safely ignore this email.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style=\"background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center;\">
+                                <p style=\"margin: 0; font-size: 12px; color: #94a3b8;\">
+                                    &copy; {$year} Codecrafters. All rights reserved.<br>
+                                    CareSync Family Health Tracking System
+                                </p>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
     </body>
     </html>";
 
@@ -65,49 +109,6 @@ function sendOtpEmail($to_email, $otp, $google_script_url) {
     curl_close($ch);
     
     return ($http_code == 200 || $http_code == 302);
-}
-
-// STEP 1: Process initial registration and send OTP
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register_step1'])) {
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirm_password = $_POST['confirm_password'] ?? '';
-
-    if ($password !== $confirm_password) {
-        $error_message = "Passwords do not match!";
-    } elseif (!is_valid_email_domain($email)) {
-        $error_message = "Email is incorrect or inactive. Please enter a real email address.";
-    } else {
-        $safe_email = $conn->real_escape_string($email);
-        $check_sql = "SELECT id FROM users WHERE email = '$safe_email'";
-        $check_result = $conn->query($check_sql);
-
-        if ($check_result && $check_result->num_rows > 0) {
-            $error_message = "An account with this email already exists.";
-        } else {
-            // Generate 6-digit OTP
-            $otp = sprintf("%06d", mt_rand(100000, 999999));
-            
-            // Store pending registration details in session securely
-            $_SESSION['pending_reg'] = [
-                'name' => $name,
-                'email' => $email,
-                'password_hash' => password_hash($password, PASSWORD_DEFAULT),
-                'otp' => $otp,
-                'otp_expires' => time() + (15 * 60) // 15 minutes validity
-            ];
-
-            // Send OTP Email
-            if (sendOtpEmail($email, $otp, $google_script_url)) {
-                $success_message = "OTP sent successfully! Please check your inbox.";
-                $_SESSION['reg_step'] = 2; // Move to OTP verification UI
-            } else {
-                $error_message = "Failed to send OTP email. Please try again.";
-                unset($_SESSION['pending_reg']);
-            }
-        }
-    }
 }
 
 // STEP 2: Verify OTP and insert into Database
