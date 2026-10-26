@@ -155,13 +155,21 @@ if (!isset($_SESSION['user_id'])) {
             font-size: 15px;
             display: block;
         }
-        .member-role {
+        .member-degree {
             font-size: 12px;
-            color: var(--cs-text-muted);
+            color: #0284c7;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        .member-Uni {
+            font-size: 10px;
+            color: var(--cs-text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
         .cs-logo {
     height: 32px;
     width: 32px;
@@ -205,16 +213,16 @@ if (!isset($_SESSION['user_id'])) {
             </h3>
             
             <div class="team-grid">
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250322M</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250295F</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250384D</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250296J</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250016E</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250734D</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250525M</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250283R</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250292T</span><span class="member-role">UG(UOM)</span></div></div>
-                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250070L</span><span class="member-role">UG(UOM)</span></div></div>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250322M</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250295F</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250384D</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250296J</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250016E</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250734D</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250525M</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250283R</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250292T</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
+                <div class="team-member"><div class="member-icon"><i class="fas fa-user-graduate"></i></div><div class="member-info"><span class="member-id">250070L</span><span class="member-degree">CSE Undergraduate</span></div></div><span class="member-uni">University of Moratuwa</span>
             </div>
         </div>
     </div>
