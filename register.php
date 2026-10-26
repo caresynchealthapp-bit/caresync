@@ -1,8 +1,3 @@
-To implement Email OTP verification during user registration, we need to modify both the HTML form to capture the OTP and the PHP backend to generate, send, and verify it.
-
-Here is the exact implementation to replace your current `register.php`:
-
-```php
 <?php
 session_set_cookie_params([
     'lifetime' => 31536000,
