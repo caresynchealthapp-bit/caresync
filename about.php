@@ -161,13 +161,15 @@ if (!isset($_SESSION['user_id'])) {
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: block;
         }
 
         .member-Uni {
-            font-size: 10px;
+            font-size: 6px;
             color: var(--cs-text-muted);
             font-weight: 600;
             letter-spacing: 0.5px;
+            display: block;
         }
 
         .cs-logo {
