@@ -306,13 +306,51 @@ function formatDateTime($datetime) {
             border: 1px solid #bae6fd;
             cursor: pointer;
             transition: all 0.2s ease;
-            margin-right: 14px;
+            margin-right: 12px;
             box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
         }
         .user-id-badge:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
             background: #e0f2fe;
+        }
+
+        /* Sleek Top Navbar Smart Light & Buzzer Pill Button */
+        .smart-alert-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            color: #b45309;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 12.5px;
+            font-weight: 700;
+            border: 1px solid #fde68a;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-right: 12px;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.12);
+            white-space: nowrap;
+        }
+        .smart-alert-nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.24);
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        .smart-alert-nav-btn .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+            animation: hwPulse 2s infinite;
+        }
+        @keyframes hwPulse {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25); }
+            50% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.45); }
         }
 
         /* Hero Welcome & KPI Banner */
@@ -377,6 +415,130 @@ function formatDateTime($datetime) {
             font-size: 11.5px;
             font-weight: 600;
             opacity: 0.88;
+        }
+
+        /* CareSync Bridge Dedicated Page Styles */
+        .bridge-hero-card {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0d9488 100%);
+            border-radius: 22px;
+            padding: 32px;
+            color: #ffffff;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            box-shadow: 0 18px 36px -10px rgba(15, 23, 42, 0.35);
+            position: relative;
+            overflow: hidden;
+        }
+        .bridge-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            color: #fde68a;
+            padding: 6px 13px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 12px;
+        }
+        .btn-download-bridge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff !important;
+            text-decoration: none !important;
+            padding: 15px 26px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 24px -4px rgba(245, 158, 11, 0.45);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-download-bridge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px -4px rgba(245, 158, 11, 0.6);
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+        }
+        .bridge-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .bridge-feature-box {
+            background: #ffffff;
+            border: 1px solid var(--cs-border);
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+        }
+        .bridge-feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+        .bridge-step-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .bridge-step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            background: #f8fafc;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .bridge-step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--cs-primary);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .bridge-trouble-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+        .bridge-trouble-table th, .bridge-trouble-table td {
+            text-align: left;
+            padding: 12px 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .bridge-trouble-table th {
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Dashboard Columns & Task Cards */
@@ -674,11 +836,16 @@ function formatDateTime($datetime) {
             box-shadow: 0 6px 14px rgba(2, 132, 199, 0.35);
         }
 
+        @media (max-width: 900px) {
+            .bridge-feature-grid { grid-template-columns: 1fr; }
+            .smart-alert-nav-btn .btn-text-label { display: none; }
+        }
+
         @media (max-width: 768px) {
             .two-col { grid-template-columns: 1fr; }
-            .hero-summary-banner { padding: 22px; }
+            .hero-summary-banner, .bridge-hero-card { padding: 22px; }
             .pharma-result-item { flex-direction: column; align-items: flex-start; }
-            .btn-directions { width: 100%; justify-content: center; box-sizing: border-box; }
+            .btn-directions, .btn-download-bridge { width: 100%; justify-content: center; box-sizing: border-box; }
         }
     </style>
     <link rel="icon" type="image/png" href="Firefly.png">
@@ -722,6 +889,14 @@ function formatDateTime($datetime) {
                 <i class="fas fa-user-plus"></i> Add Family Member
             </li>
             <div class="section-title" style="padding: 16px 20px 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.8px; color: #94a3b8; text-transform: uppercase; margin-top: 10px;">System & Info</div>
+            
+            <!-- NEW SIDEBAR BUTTON: CareSync Bridge -->
+            <li id="sidebar-bridge-nav" class="nav-item" onclick="openCareSyncBridgeView();">
+                <i class="fas fa-microchip" style="color: #f59e0b;"></i>
+                <span>CareSync Bridge</span>
+                <span style="margin-left:auto; background:#fef3c7; color:#b45309; font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; border:1px solid #fde68a;">IoT</span>
+            </li>
+
             <li class="nav-item" onclick="window.location.href='about.php'">
                 <i class="fas fa-info-circle"></i> About Us
             </li>
@@ -747,6 +922,14 @@ function formatDateTime($datetime) {
         <header class="header">
             <h1 id="page-title">Family Overview</h1>
             <div class="user-controls" style="display: flex; align-items: center;">
+                
+                <!-- NEW TOP NAVBAR BUTTON: Compact Smart Light & Buzzer Pill -->
+                <button type="button" class="smart-alert-nav-btn" onclick="openCareSyncBridgeView()" title="Configure Smart LED Light & Buzzer Hardware Alerts">
+                    <span class="pulse-dot"></span>
+                    <i class="fas fa-lightbulb"></i>
+                    <span class="btn-text-label">Smart Light & Buzzer</span>
+                </button>
+
                 <!-- Clickable User ID Pill -->
                 <div class="user-id-badge" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" title="Click to copy your User ID">
                     <i class="fas fa-id-badge"></i>
@@ -815,29 +998,29 @@ function formatDateTime($datetime) {
                                     </div>
 
                                     <div class="task-actions-group" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px;">
-                                                <!-- 1. Done Button Form -->
-                                                <form action="index.php" method="POST" style="margin:0;">
-                                                    <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
-                                                    <button type="submit" class="btn-action-done">
-                                                        <i class="fas fa-check"></i> Done
-                                                    </button>
-                                                </form>
+                                        <!-- 1. Done Button Form -->
+                                        <form action="index.php" method="POST" style="margin:0;">
+                                            <input type="hidden" name="mark_done_id" value="<?php echo $task['id']; ?>">
+                                            <button type="submit" class="btn-action-done">
+                                                <i class="fas fa-check"></i> Done
+                                            </button>
+                                        </form>
 
-                                                <!-- 2. Delete Button Form (Moved to middle) -->
-                                                <form id="delete-form-<?php echo $task['id']; ?>" action="index.php" method="POST" style="margin:0;">
-                                                    <input type="hidden" name="delete_task_id" value="<?php echo $task['id']; ?>">
-                                                    <button type="button" onclick="openDeleteModal('delete-form-<?php echo $task['id']; ?>')" class="btn-danger" style="background: #ef4444; color: #ffffff; border: none; padding: 9px 15px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);">
-                                                        <i class="fas fa-trash-alt"></i>Delete
-                                                    </button>
-                                                </form>
+                                        <!-- 2. Delete Button Form -->
+                                        <form id="delete-form-<?php echo $task['id']; ?>" action="index.php" method="POST" style="margin:0;">
+                                            <input type="hidden" name="delete_task_id" value="<?php echo $task['id']; ?>">
+                                            <button type="button" onclick="openDeleteModal('delete-form-<?php echo $task['id']; ?>')" class="btn-danger" style="background: #ef4444; color: #ffffff; border: none; padding: 9px 15px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);">
+                                                <i class="fas fa-trash-alt"></i>Delete
+                                            </button>
+                                        </form>
 
-                                                <!-- 3. Find Pharmacy Button -->
-                                                <?php if ($task['task_type'] === 'Medicine'): ?>
-                                                    <button type="button" class="btn-action-find find-med-btn" onclick="findNearestPharmacies('<?php echo addslashes($task['title']); ?>')">
-                                                        <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
-                                                    </button>
-                                                <?php endif; ?>
-                                            </div>
+                                        <!-- 3. Find Pharmacy Button -->
+                                        <?php if ($task['task_type'] === 'Medicine'): ?>
+                                            <button type="button" class="btn-action-find find-med-btn" onclick="findNearestPharmacies('<?php echo addslashes($task['title']); ?>')">
+                                                <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         <?php else: ?>
@@ -877,6 +1060,205 @@ function formatDateTime($datetime) {
                     </div>
 
                 </div>
+            </div>
+
+            <!-- =========================================================
+                 NEW VIEW SECTION: CARESYNC BRIDGE (SMART LIGHT & BUZZER)
+            ========================================================= -->
+            <div id="caresync-bridge" class="view-section">
+                
+                <!-- Download Hero Card -->
+                <div class="bridge-hero-card">
+                    <div style="max-width: 640px;">
+                        <div class="bridge-hero-badge">
+                            <i class="fas fa-bolt"></i> CareSync IoT Hardware Companion
+                        </div>
+                        <h2 style="margin: 0 0 10px 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.4px;">
+                            CareSync Bridge: Smart LED Light & Buzzer Alert System
+                        </h2>
+                        <p style="margin: 0 0 18px 0; color: rgba(255, 255, 255, 0.86); font-size: 0.95rem; line-height: 1.6;">
+                            Never miss a critical prescription again. CareSync Bridge links your online family schedule directly to an external Arduino physical alarm—automatically activating a flashing <strong>LED status indicator</strong> and <strong>audible buzzer</strong> the exact moment a medicine dose is due.
+                        </p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 12.5px; color: #cbd5e1;">
+                            <span><i class="fab fa-windows" style="color: #38bdf8;"></i> Windows 10 / 11 (64-bit)</span>
+                            <span>&bull;</span>
+                            <span><i class="fas fa-microchip" style="color: #fde68a;"></i> Arduino Uno R3 (USB Serial)</span>
+                            <span>&bull;</span>
+                            <span><i class="fas fa-code-branch" style="color: #34d399;"></i> Auto-Updated via GitHub Releases</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                        <!-- Dynamic GitHub Latest Release Download Link -->
+                        <a href="https://github.com/caresynchealthapp-bit/caresync/releases/latest/download/Caresync_bridge_setup.exe" 
+                           class="btn-download-bridge"
+                           target="_blank" 
+                           rel="noopener">
+                            <i class="fas fa-download" style="font-size: 18px;"></i>
+                            <div>
+                                <div style="line-height: 1.1;">Download CareSync Bridge</div>
+                                <small style="font-size: 11px; font-weight: 600; opacity: 0.9;">Caresync_bridge_setup.exe (Latest Release)</small>
+                            </div>
+                        </a>
+                        <a href="https://github.com/caresynchealthapp-bit/caresync/releases/latest" target="_blank" rel="noopener" style="color: #bae6fd; font-size: 12px; font-weight: 600; text-decoration: underline;">
+                            View Release Notes on GitHub <i class="fas fa-external-link-alt" style="font-size: 10px;"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- How the LED & Buzzer Work (3 Feature Cards) -->
+                <div class="bridge-feature-grid">
+                    <div class="bridge-feature-box">
+                        <div class="bridge-feature-icon" style="background: #eff6ff; color: #2563eb;">
+                            <i class="fas fa-satellite-dish"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">1. Real-Time Cloud Sync</h4>
+                        <p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.55;">
+                            The desktop app runs quietly on your PC, monitoring your CareSync User ID (<strong><?php echo htmlspecialchars($user_id); ?></strong>) for scheduled family medicines in real time.
+                        </p>
+                    </div>
+
+                    <div class="bridge-feature-box">
+                        <div class="bridge-feature-icon" style="background: #fef3c7; color: #d97706;">
+                            <i class="fas fa-volume-up"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">2. Instant LED & Buzzer Trigger</h4>
+                        <p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.55;">
+                            When a medicine time arrives, the Bridge dispatches a serial signal (`9600 baud`) to your Arduino, lighting up the <strong>Smart LED</strong> and sounding the <strong>Buzzer</strong> so elderly members in another room are immediately alerted.
+                        </p>
+                    </div>
+
+                    <div class="bridge-feature-box">
+                        <div class="bridge-feature-icon" style="background: #ecfdf5; color: #059669;">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">3. Auto-Silence on Completion</h4>
+                        <p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.55;">
+                            Once the patient takes their dose and clicks <strong>"Done"</strong> on the CareSync dashboard (or resets the alert via the Bridge interface), the LED turns off and the buzzer silences automatically.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Two Column Guide: Installation + Hardware Requirements -->
+                <div class="dashboard-grid" style="margin-top: 0; margin-bottom: 24px;">
+                    
+                    <!-- Left: Step-by-Step Installation & Usage -->
+                    <div class="dash-column">
+                        <h3><i class="fas fa-list-ol" style="color: var(--cs-primary);"></i> Installation & Setup Guide</h3>
+                        <ul class="bridge-step-list">
+                            <li class="bridge-step-item">
+                                <span class="bridge-step-num">1</span>
+                                <div>
+                                    <strong style="display:block; color:#0f172a; font-size:14px; margin-bottom:3px;">Download & Run the Installer</strong>
+                                    <span style="font-size:13px; color:#64748b; line-height:1.5;">
+                                        Click the <strong>Download CareSync Bridge</strong> button above to get <code>Caresync_bridge_setup.exe</code>. Double-click the installer and follow the setup wizard.
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="bridge-step-item">
+                                <span class="bridge-step-num">2</span>
+                                <div>
+                                    <strong style="display:block; color:#0f172a; font-size:14px; margin-bottom:3px;">Connect Your Smart Alert Hardware</strong>
+                                    <span style="font-size:13px; color:#64748b; line-height:1.5;">
+                                        Plug your Arduino Uno R3 (wired with your status LED and piezo buzzer) into your computer's USB port. Verify in Windows Device Manager that it is assigned to <strong>COM14</strong> (or select your active COM port inside the app).
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="bridge-step-item">
+                                <span class="bridge-step-num">3</span>
+                                <div>
+                                    <strong style="display:block; color:#0f172a; font-size:14px; margin-bottom:3px;">Enter Your CareSync User ID</strong>
+                                    <span style="font-size:13px; color:#64748b; line-height:1.5;">
+                                        Launch <strong>CareSync Bridge</strong> from your Desktop shortcut. Paste your CareSync User ID (<strong><?php echo htmlspecialchars($user_id); ?></strong>) and click Connect.
+                                    </span>
+                                    <div style="margin-top:8px;">
+                                        <button type="button" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;">
+                                            <i class="far fa-copy"></i> Copy My User ID (<?php echo htmlspecialchars($user_id); ?>)
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="bridge-step-item">
+                                <span class="bridge-step-num">4</span>
+                                <div>
+                                    <strong style="display:block; color:#0f172a; font-size:14px; margin-bottom:3px;">Keep Running in the Background</strong>
+                                    <span style="font-size:13px; color:#64748b; line-height:1.5;">
+                                        Leave the CareSync Bridge window open or minimized while your PC is on. Whenever a medicine task reaches its scheduled time, the LED and Buzzer will activate automatically.
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Right: Hardware Specs & Windows SmartScreen Notice -->
+                    <div class="dash-column">
+                        <h3><i class="fas fa-tools" style="color: var(--cs-teal);"></i> Hardware Configuration & Notes</h3>
+                        
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 18px;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 14px; font-weight: 800; color: #0f172a;">
+                                <i class="fas fa-microchip" style="color: #0d9488;"></i> Standard Hardware Pinout & Serial Specs
+                            </h4>
+                            <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #475569; line-height: 1.7;">
+                                <li><strong>Microcontroller:</strong> Arduino Uno R3 (ATmega328P) or compatible USB-Serial board.</li>
+                                <li><strong>Default Serial Port & Speed:</strong> <code>COM14</code> at <code>9600 baud</code>.</li>
+                                <li><strong>Visual Alert (LED):</strong> High-brightness LED indicator connected to digital output pin (with 220&Omega; current-limiting resistor) &rarr; flashes when medicine is due.</li>
+                                <li><strong>Audible Alert (Buzzer):</strong> Active 5V Piezo Buzzer connected to digital output pin and GND &rarr; emits intermittent beep pattern during active prescription window.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Windows Defender SmartScreen Tip -->
+                        <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 12px; padding: 15px 16px;">
+                            <h4 style="margin: 0 0 6px 0; font-size: 13.5px; font-weight: 800; color: #92400e; display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-shield-alt"></i> Note on Windows "Protected your PC" Prompt
+                            </h4>
+                            <p style="margin: 0; font-size: 12.8px; color: #78350f; line-height: 1.55;">
+                                Because <strong>CareSync Bridge</strong> is an independent university engineering tool built by Codecrafters, Windows SmartScreen may show an "Unknown Publisher" prompt on first launch. Simply click <strong>"More info"</strong> &rarr; <strong>"Run anyway"</strong> to proceed with installation.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Troubleshooting Table -->
+                <div class="form-card" style="margin-bottom: 10px;">
+                    <h3 style="margin: 0 0 16px 0; font-weight: 800; font-size: 1.08rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-wrench" style="color: var(--cs-danger);"></i> Common Troubleshooting Guide
+                    </h3>
+                    <div style="overflow-x: auto;">
+                        <table class="bridge-trouble-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 28%;">Symptom / Issue</th>
+                                    <th style="width: 32%;">Likely Cause</th>
+                                    <th style="width: 40%;">How to Fix</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>"Could not open port COM14" Error</strong></td>
+                                    <td>Arduino is unplugged, assigned to a different COM port, or Arduino IDE Serial Monitor is open.</td>
+                                    <td>Close the Arduino IDE Serial Monitor completely. Open <strong>Windows Device Manager &rarr; Ports (COM &amp; LPT)</strong> to check the port number or change it to <code>COM14</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>LED &amp; Buzzer Do Not Trigger on Time</strong></td>
+                                    <td>Bridge app is closed, User ID doesn't match, or PC lost internet connection.</td>
+                                    <td>Ensure the CareSync Bridge app is running, verify your User ID is set to <code><?php echo htmlspecialchars($user_id); ?></code>, and check that the task status is still <strong>Pending</strong>.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>LED Lights Up, But Buzzer is Silent</strong></td>
+                                    <td>Buzzer jumper wire is loose or polarity (+/-) on the active piezo buzzer is reversed.</td>
+                                    <td>Ensure the positive (+) leg of the buzzer is connected to the Arduino signal pin and the negative (-) pin is firmly connected to <code>GND</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>USB Device Not Recognized</strong></td>
+                                    <td>Loose USB Type-B cable or missing CH340 USB-to-Serial driver on Windows.</td>
+                                    <td>Try a different USB 2.0 port on your laptop and install the standard Arduino/CH340 serial driver if the board appears with a yellow warning icon in Device Manager.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
             <!-- ADD MEMBER VIEW -->
@@ -1046,72 +1428,72 @@ function formatDateTime($datetime) {
         </div>
 
         <footer id="cs-footer-support" class="cs-footer">
-    <div class="cs-footer-inner">
-        
-        <!-- ROW 1: Sleek Dedicated Support Strip -->
-        <div id="cs-support-highlight" class="cs-support-banner">
-            <div class="cs-support-header">
-                <div class="cs-support-badge-icon">
-                    <i class="fa-solid fa-headset"></i>
-                </div>
-                <div>
-                    <div class="cs-support-heading">24/7 CareSync Help & Support Desk</div>
-                    <div class="cs-support-subtext">Need help with family prescriptions or clinic schedules? Reach out directly.</div>
-                </div>
-            </div>
-
-            <div class="cs-support-actions">
-                <a href="tel:+94766260341" class="cs-contact-chip">
-                    <span class="cs-chip-icon"><i class="fa-solid fa-phone"></i></span>
-                    <div class="cs-chip-meta">
-                        <span class="cs-chip-label">Hotline 1</span>
-                        <span class="cs-chip-val">+94 76 626 0341</span>
+            <div class="cs-footer-inner">
+                
+                <!-- ROW 1: Sleek Dedicated Support Strip -->
+                <div id="cs-support-highlight" class="cs-support-banner">
+                    <div class="cs-support-header">
+                        <div class="cs-support-badge-icon">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                        <div>
+                            <div class="cs-support-heading">24/7 CareSync Help & Support Desk</div>
+                            <div class="cs-support-subtext">Need help with family prescriptions or clinic schedules? Reach out directly.</div>
+                        </div>
                     </div>
-                </a>
 
-                <a href="tel:+94777610332" class="cs-contact-chip">
-                    <span class="cs-chip-icon"><i class="fa-solid fa-phone"></i></span>
-                    <div class="cs-chip-meta">
-                        <span class="cs-chip-label">Hotline 2</span>
-                        <span class="cs-chip-val">+94 77 761 0332</span>
+                    <div class="cs-support-actions">
+                        <a href="tel:+94766260341" class="cs-contact-chip">
+                            <span class="cs-chip-icon"><i class="fa-solid fa-phone"></i></span>
+                            <div class="cs-chip-meta">
+                                <span class="cs-chip-label">Hotline 1</span>
+                                <span class="cs-chip-val">+94 76 626 0341</span>
+                            </div>
+                        </a>
+
+                        <a href="tel:+94777610332" class="cs-contact-chip">
+                            <span class="cs-chip-icon"><i class="fa-solid fa-phone"></i></span>
+                            <div class="cs-chip-meta">
+                                <span class="cs-chip-label">Hotline 2</span>
+                                <span class="cs-chip-val">+94 77 761 0332</span>
+                            </div>
+                        </a>
+
+                        <a href="mailto:caresync.healthapp@gmail.com" class="cs-contact-chip">
+                            <span class="cs-chip-icon"><i class="fa-solid fa-envelope"></i></span>
+                            <div class="cs-chip-meta">
+                                <span class="cs-chip-label">Official Email</span>
+                                <span class="cs-chip-val">caresync.healthapp@gmail.com</span>
+                            </div>
+                        </a>
                     </div>
-                </a>
-
-                <a href="mailto:caresync.healthapp@gmail.com" class="cs-contact-chip">
-                    <span class="cs-chip-icon"><i class="fa-solid fa-envelope"></i></span>
-                    <div class="cs-chip-meta">
-                        <span class="cs-chip-label">Official Email</span>
-                        <span class="cs-chip-val">caresync.healthapp@gmail.com</span>
-                    </div>
-                </a>
-            </div>
-        </div>
-
-        <!-- ROW 2: Original Clean Brand & Supabase Bar -->
-        <div class="cs-footer-bottom">
-            <div class="cs-brand-wrapper">
-                <div class="cs-brand">
-                    <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
-                    <span class="cs-brand-name">CareSync</span>
                 </div>
-                <div class="cs-brand-tagline">Family Health Tracking & Prescription Management System.</div>
-            </div>
 
-            <div class="cs-copyright">
-                &copy; 2026 Codecrafters. All rights reserved.
-            </div>
+                <!-- ROW 2: Original Clean Brand & Supabase Bar -->
+                <div class="cs-footer-bottom">
+                    <div class="cs-brand-wrapper">
+                        <div class="cs-brand">
+                            <img src="Firefly.png" alt="CareSync Logo" class="cs-logo">
+                            <span class="cs-brand-name">CareSync</span>
+                        </div>
+                        <div class="cs-brand-tagline">Family Health Tracking & Prescription Management System.</div>
+                    </div>
 
-            <div class="cs-powered">
-                <span class="cs-powered-text">Powered by</span>
-                <svg class="supabase-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M11.9997 2.25L4.54228 15.1765C4.24925 15.6845 4.61453 16.3267 5.20235 16.3267H10.4997V21.75L17.9572 8.82353C18.2502 8.31553 17.8849 7.67333 17.2971 7.67333H11.9997V2.25Z" fill="#3ECF8E"/>
-                </svg>
-                <span class="cs-supabase-text">Supabase</span>
-            </div>
-        </div>
+                    <div class="cs-copyright">
+                        &copy; 2026 Codecrafters. All rights reserved.
+                    </div>
 
-    </div>
-</footer>
+                    <div class="cs-powered">
+                        <span class="cs-powered-text">Powered by</span>
+                        <svg class="supabase-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.9997 2.25L4.54228 15.1765C4.24925 15.6845 4.61453 16.3267 5.20235 16.3267H10.4997V21.75L17.9572 8.82353C18.2502 8.31553 17.8849 7.67333 17.2971 7.67333H11.9997V2.25Z" fill="#3ECF8E"/>
+                        </svg>
+                        <span class="cs-supabase-text">Supabase</span>
+                    </div>
+                </div>
+
+            </div>
+        </footer>
 
     </main>
 
@@ -1158,6 +1540,19 @@ function formatDateTime($datetime) {
         const PHARMA_SUPABASE_URL = 'https://juobkaftyrzlxbviudpy.supabase.co';
         const PHARMA_SUPABASE_KEY = 'sb_publishable_qdME8AYk9rz5B4FHs4Eb1g_0vvhN73v';
         const pharmaSupabase = window.supabase.createClient(PHARMA_SUPABASE_URL, PHARMA_SUPABASE_KEY);
+
+        // Unified Navigation Helper for CareSync Bridge (Top Navbar Pill + Sidebar Item)
+        function openCareSyncBridgeView() {
+            const sidebarNav = document.getElementById('sidebar-bridge-nav');
+            switchView('caresync-bridge', sidebarNav, 'CareSync Bridge • Smart Light & Buzzer');
+            if (typeof closeMobileMenu === 'function') {
+                closeMobileMenu();
+            }
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
 
         function copyUserId(uid) {
             navigator.clipboard.writeText(uid).then(() => {
@@ -1391,40 +1786,39 @@ function formatDateTime($datetime) {
         });
 
         // Custom Delete Modal Logic
-            let formToSubmitId = null;
+        let formToSubmitId = null;
 
-            function openDeleteModal(formId) {
-                formToSubmitId = formId;
-                document.getElementById('delete-confirm-modal').classList.add('active');
+        function openDeleteModal(formId) {
+            formToSubmitId = formId;
+            document.getElementById('delete-confirm-modal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            formToSubmitId = null;
+            document.getElementById('delete-confirm-modal').classList.remove('active');
+        }
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+            if (formToSubmitId) {
+                document.getElementById(formToSubmitId).submit();
             }
+        });
 
-            function closeDeleteModal() {
-                formToSubmitId = null;
-                document.getElementById('delete-confirm-modal').classList.remove('active');
+        function scrollToCareSyncSupport(event) {
+            if (event) event.preventDefault();
+            const footer = document.getElementById('cs-footer-support');
+            const highlightBox = document.getElementById('cs-support-highlight');
+
+            if (footer) {
+                footer.scrollIntoView({ behavior: 'smooth', block: 'end' });
             }
-
-            document.getElementById('confirm-delete-btn').addEventListener('click', function() {
-                if (formToSubmitId) {
-                    document.getElementById(formToSubmitId).submit();
-                }
-            });
-
-            function scrollToCareSyncSupport(event) {
-    if (event) event.preventDefault();
-    const footer = document.getElementById('cs-footer-support');
-    const highlightBox = document.getElementById('cs-support-highlight');
-
-    if (footer) {
-        footer.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-    if (highlightBox) {
-        highlightBox.classList.add('support-active-glow');
-        setTimeout(() => {
-            highlightBox.classList.remove('support-active-glow');
-        }, 2400);
-    }
-}
-
+            if (highlightBox) {
+                highlightBox.classList.add('support-active-glow');
+                setTimeout(() => {
+                    highlightBox.classList.remove('support-active-glow');
+                }, 2400);
+            }
+        }
     </script>
     <script src="script.js"></script>
 </body>
