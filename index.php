@@ -1420,20 +1420,20 @@ function formatDateTime($datetime) {
                             </div>
 
                             <div class="form-group" id="clinic-early-container" style="display: none;">
-                            <label>Final Hardware & Email Alert</label>
-                            <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">You will be notified at 8 PM the day before. How early should the final hardware alert trigger on the day of the clinic?</p>
-                            <div style="display: flex; gap: 10px;">
-                                <select name="clinic_early_hours" style="flex: 1;">
-                                    <?php for($i=0; $i<=18; $i++) echo "<option value='$i'".($i==1 ? ' selected' : '').">$i Hour".($i!=1 ? 's' : '')."</option>"; ?>
-                                </select>
-                                <select name="clinic_early_minutes" style="flex: 1;">
-                                    <option value="0" selected>0 Mins</option>
-                                    <option value="15">15 Mins</option>
-                                    <option value="30">30 Mins</option>
-                                    <option value="45">45 Mins</option>
-                                </select>
+                                <label>Final Hardware & Email Alert</label>
+                                <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">You will be notified at 8 PM the day before. How early should the final hardware alert trigger on the day of the clinic?</p>
+                                <div style="display: flex; gap: 10px;">
+                                    <select name="clinic_early_hours" style="flex: 1;">
+                                        <?php for($i=0; $i<=18; $i++) echo "<option value='$i'".($i==1 ? ' selected' : '').">$i Hour".($i!=1 ? 's' : '')."</option>"; ?>
+                                    </select>
+                                    <select name="clinic_early_minutes" style="flex: 1;">
+                                        <option value="0" selected>0 Mins</option>
+                                        <option value="15">15 Mins</option>
+                                        <option value="30">30 Mins</option>
+                                        <option value="45">45 Mins</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
 
                             <div class="form-group">
                                 <label>Dosage / Special Instructions (Optional)</label>
