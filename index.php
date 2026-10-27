@@ -1419,7 +1419,7 @@ function formatDateTime($datetime) {
                                 </div>
                             </div>
 
-                            <div class="form-group" id="clinic-early-container" style="display: none;">
+                            <div class="form-group clinic-early-container" style="display: none;">
                                 <label>Final Hardware & Email Alert</label>
                                 <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">You will be notified at 8 PM the day before. How early should the final hardware alert trigger on the day of the clinic?</p>
                                 <div style="display: flex; gap: 10px;">
@@ -1589,19 +1589,23 @@ function formatDateTime($datetime) {
             const inputElem = formCard.querySelector('.task-title-input');
             const findBtn = formCard.querySelector('.find-med-btn');
             const box = formCard.querySelector('.med-suggestions-box');
+            
+            // Find the container using the class instead of an ID
+            const earlyContainer = formCard.querySelector('.clinic-early-container');
 
             if (selectElem.value === 'Clinic Date') {
                 labelElem.innerText = 'Clinic / Hospital Name';
                 inputElem.placeholder = 'e.g. National Hospital Cardiology Clinic';
                 if (findBtn) findBtn.style.display = 'none';
                 if (box) box.style.display = 'none';
+                if (earlyContainer) earlyContainer.style.display = 'block'; // Show dropdowns
             } else {
                 labelElem.innerText = 'Medicine Name';
                 inputElem.placeholder = 'Start typing medicine (e.g. Paracetamol)...';
                 if (findBtn) findBtn.style.display = 'inline-flex';
+                if (earlyContainer) earlyContainer.style.display = 'none';  // Hide dropdowns
             }
         }
-
         function handleMedicineInput(inputElem) {
             const formCard = inputElem.closest('.form-card');
             const selectElem = formCard.querySelector('.task-type-select');
