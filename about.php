@@ -72,8 +72,19 @@ if (!isset($_SESSION['user_id'])) {
             margin: 0 auto;
         }
         .hero-section {
-            text-align: center;
-            margin-bottom: 48px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0d9488 100%);
+            border-radius: 22px;
+            padding: 32px;
+            color: #ffffff;
+            margin-bottom: 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            box-shadow: 0 18px 36px -10px rgba(15, 23, 42, 0.35);
+            position: relative;
+            overflow: hidden;
         }
         .hero-section h1 {
             font-size: 2.5rem;
