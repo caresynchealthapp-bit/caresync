@@ -1,13 +1,13 @@
 <?php
 require_once 'db.php';
-date_default_timezone_set('Asia/Colombo'); //[cite: 12]
+date_default_timezone_set('Asia/Colombo');
 
-$current_time = date('Y-m-d H:i:s'); //[cite: 12]
+$current_time = date('Y-m-d H:i:s');
+// Calculate 1 hour ahead in PHP instead of SQL
+$clinic_trigger_time = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-// Get the user_id from the Python script URL, default to 1 (Kavindi) if missing[cite: 13]
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 1;
 
-// Join tasks with members to accurately filter by user_id[cite: 10]
 $sql = "SELECT tasks.id 
         FROM tasks 
         JOIN members ON tasks.member_id = members.id 
@@ -16,17 +16,17 @@ $sql = "SELECT tasks.id
         AND (
             (tasks.task_type = 'Medicine' AND tasks.schedule_time <= '$current_time')
             OR 
-            (tasks.task_type = 'Clinic Date' AND tasks.schedule_time <= DATE_ADD('$current_time', INTERVAL 1 HOUR))
+            (tasks.task_type = 'Clinic Date' AND tasks.schedule_time <= '$clinic_trigger_time')
         )
         LIMIT 1";
         
 $result = $conn->query($sql);
 
-header('Content-Type: application/json'); //[cite: 12]
+header('Content-Type: application/json');
 
-if ($result && $result->num_rows > 0) { //[cite: 12]
-    echo json_encode(["led_state" => "ON"]); //[cite: 12]
+if ($result && $result->num_rows > 0) {
+    echo json_encode(["led_state" => "ON"]);
 } else {
-    echo json_encode(["led_state" => "OFF"]); //[cite: 12]
+    echo json_encode(["led_state" => "OFF"]);
 }
 ?>
