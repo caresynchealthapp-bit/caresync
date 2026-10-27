@@ -1124,7 +1124,7 @@ function formatDateTime($datetime) {
                         </div>
                         <h4 style="margin: 0 0 8px 0; font-size: 1.02rem; font-weight: 800; color: #0f172a;">2. Instant LED & Buzzer Trigger</h4>
                         <p style="margin: 0; font-size: 13.5px; color: #64748b; line-height: 1.55;">
-                            When a medicine time arrives, the Bridge dispatches a serial signal (`9600 baud`) to your Arduino, lighting up the <strong>Smart LED</strong> and sounding the <strong>Buzzer</strong> so elderly members in another room are immediately alerted.
+                            When a medicine time arrives the <strong>Smart LED</strong> lights up and the <strong>Buzzer</strong> sounds so members who can't see the light are alerted as well.
                         </p>
                     </div>
 
@@ -1160,7 +1160,7 @@ function formatDateTime($datetime) {
                                 <div>
                                     <strong style="display:block; color:#0f172a; font-size:14px; margin-bottom:3px;">Connect Your Smart Alert Hardware</strong>
                                     <span style="font-size:13px; color:#64748b; line-height:1.5;">
-                                        Plug your Arduino Uno R3 (wired with your status LED and piezo buzzer) into your computer's USB port. Verify in Windows Device Manager that it is assigned to <strong>COM14</strong> (or select your active COM port inside the app).
+                                        Plug your device into your computer's USB port. Verify in Windows Device Manager that it is assigned to <strong>COM14</strong> (or select your active COM port inside the app).
                                     </span>
                                 </div>
                             </li>
