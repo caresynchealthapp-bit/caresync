@@ -87,14 +87,14 @@ if (!isset($_SESSION['user_id'])) {
             font-size: 2.5rem;
             font-weight: 800;
             margin: 0 0 12px 0;
-            background: linear-gradient(135deg, #fafcfe 0%, #c1c4c3 100%);
+            background: linear-gradient(135deg, #fafcfe 0%, #767978 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             align-items: center;
         }
         .hero-section p {
             font-size: 1.1rem;
-            color: var(--cs-text-muted);
+            color: #ffffff;
             line-height: 1.6;
             max-width: 700px;
             margin: 0 auto;
