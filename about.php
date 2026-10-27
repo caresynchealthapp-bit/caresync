@@ -206,8 +206,10 @@ if (!isset($_SESSION['user_id'])) {
 
     <div class="container">
         <div class="hero-section">
-            <h1>Engineered by Codecrafters</h1>
-            <p>CareSync is a unified family health tracking and prescription management platform designed to integrate seamlessly with the PharmaConnect real-time POS and GRN infrastructure.</p>
+            <h1 style="margin: 0 0 10px 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.4px;">Engineered by Codecrafters</h1>
+            <p style="margin: 0 0 18px 0; color: rgba(255, 255, 255, 0.86); font-size: 0.95rem; line-height: 1.6;">
+                <strong>CareSync</strong> is a unified family health tracking and prescription management platform designed to integrate seamlessly with the <strong>PharmaConnect</strong> real-time POS and GRN infrastructure.
+            </p>
         </div>
 
         <div class="project-card">
