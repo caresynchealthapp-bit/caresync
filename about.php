@@ -72,33 +72,40 @@ if (!isset($_SESSION['user_id'])) {
             margin: 0 auto;
         }
         .hero-section {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0d9488 100%);
-            border-radius: 22px;
-            padding: 32px;
-            color: #ffffff;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-            gap: 24px;
-            box-shadow: 0 18px 36px -10px rgba(15, 23, 42, 0.35);
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-section h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin: 0 0 12px 0;
-            background: linear-gradient(135deg, #fafcfe 0%, #767978 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            align-items: center;
-        }
-        .hero-section p {
-            font-size: 1.1rem;
-            color: #ffffff;
-            line-height: 1.6;
-            max-width: 700px;
-            margin: 0 auto;
-        }
+    /* Activate flexbox and center contents */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0d9488 100%);
+    border-radius: 22px;
+    padding: 32px;
+    color: #ffffff;
+    margin-bottom: 28px;
+    box-shadow: 0 18px 36px -10px rgba(15, 23, 42, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    letter-spacing: -0.4px;
+    background: linear-gradient(135deg, #fafcfe 0%, #767978 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-section p {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.86);
+    line-height: 1.6;
+    max-width: 700px;
+    margin: 0 0 18px 0; 
+}
         .project-card {
             background: #ffffff;
             border-radius: 20px;
@@ -206,8 +213,8 @@ if (!isset($_SESSION['user_id'])) {
 
     <div class="container">
         <div class="hero-section">
-            <h1 style="margin: 0 0 10px 0; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.4px; align:center;">Engineered by Codecrafters</h1>
-            <p style="margin: 0 0 18px 0; color: rgba(255, 255, 255, 0.86); font-size: 0.95rem; line-height: 1.6; align:center;">
+            <h1>Engineered by Codecrafters</h1>
+            <p>
                 <strong>CareSync</strong> is a unified family health tracking and prescription management platform designed to integrate seamlessly with the <strong>PharmaConnect</strong> real-time POS and GRN infrastructure.
             </p>
         </div>
