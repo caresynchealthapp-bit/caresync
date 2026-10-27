@@ -12,8 +12,12 @@ $sql = "SELECT tasks.id
         FROM tasks 
         JOIN members ON tasks.member_id = members.id 
         WHERE members.user_id = '$user_id' 
-        AND tasks.schedule_time <= '$current_time' 
         AND tasks.status = 'Pending' 
+        AND (
+            (tasks.task_type = 'Medicine' AND tasks.schedule_time <= '$current_time')
+            OR 
+            (tasks.task_type = 'Clinic Date' AND tasks.schedule_time <= DATE_ADD('$current_time', INTERVAL 1 HOUR))
+        )
         LIMIT 1";
         
 $result = $conn->query($sql);
