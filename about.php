@@ -77,9 +77,6 @@ if (!isset($_SESSION['user_id'])) {
             padding: 32px;
             color: #ffffff;
             margin-bottom: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
             gap: 24px;
             box-shadow: 0 18px 36px -10px rgba(15, 23, 42, 0.35);
@@ -90,9 +87,10 @@ if (!isset($_SESSION['user_id'])) {
             font-size: 2.5rem;
             font-weight: 800;
             margin: 0 0 12px 0;
-            background: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
+            background: linear-gradient(135deg, #fafcfe 0%, #c1c4c3 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            align-items: center;
         }
         .hero-section p {
             font-size: 1.1rem;
