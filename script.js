@@ -182,39 +182,79 @@ const localAlertedKeys = new Set();
 function checkTasks() {
     pollEmailReminders();
 
-    if (typeof todayTasks === 'undefined' || !Array.isArray(todayTasks)) return;
+    if (typeof pendingTasks === 'undefined' || !Array.isArray(pendingTasks)) return;
 
     const now = new Date();
+    const currentHour = now.getHours();
     
-    todayTasks.forEach(task => {
-        if (!task.schedule_time || !task.id) return;
+    pendingTasks.forEach(task => {
+        if (!task.schedule_time || !task.id || task.status !== 'Pending') return;
 
         const safeDateString = task.schedule_time.replace(' ', 'T'); 
         const taskTime = new Date(safeDateString);
         const diffSeconds = (taskTime.getTime() - now.getTime()) / 1000;
 
-        if (task.task_type === 'Medicine' && diffSeconds <= 300 && diffSeconds > 0) {
-            const key1 = 'notified_s1_' + task.id;
-            if (!localAlertedKeys.has(key1) && !localStorage.getItem(key1)) {
-                localAlertedKeys.add(key1);
-                try { localStorage.setItem(key1, 'true'); } catch(e) {}
-                triggerAlert(task, 'Upcoming Medicine in 5 mins');
+        if (task.task_type === 'Medicine') {
+            // 1. Medicine: 5 minutes before
+            if (diffSeconds <= 300 && diffSeconds > 0) {
+                const key = 'notified_med_5m_' + task.id;
+                if (!localAlertedKeys.has(key) && !localStorage.getItem(key)) {
+                    localAlertedKeys.add(key);
+                    try { localStorage.setItem(key, 'true'); } catch(e) {}
+                    triggerAlert(task, 'Medicine in 5 mins');
+                }
             }
-        } else if (task.task_type === 'Clinic Date' && diffSeconds <= 3600 && diffSeconds > 0) {
-            const key1 = 'notified_s1_' + task.id;
-            if (!localAlertedKeys.has(key1) && !localStorage.getItem(key1)) {
-                localAlertedKeys.add(key1);
-                try { localStorage.setItem(key1, 'true'); } catch(e) {}
-                triggerAlert(task, 'Clinic in 1 hour');
+            // 2. Medicine: At exact time
+            if (now >= taskTime) {
+                const key = 'notified_med_now_' + task.id;
+                if (!localAlertedKeys.has(key) && !localStorage.getItem(key)) {
+                    localAlertedKeys.add(key);
+                    try { localStorage.setItem(key, 'true'); } catch(e) {}
+                    triggerAlert(task, 'Medicine Due Now');
+                }
             }
-        }
+        } else if (task.task_type === 'Clinic Date') {
+            // 1. Clinic: Previous Day 8 PM
+            const yesterdayTime = new Date(taskTime);
+            yesterdayTime.setDate(yesterdayTime.getDate() - 1);
+            const isPreviousDay = now.getFullYear() === yesterdayTime.getFullYear() &&
+                                  now.getMonth() === yesterdayTime.getMonth() &&
+                                  now.getDate() === yesterdayTime.getDate();
 
-        if (now >= taskTime) {
-            const key2 = 'notified_s2_' + task.id;
-            if (!localAlertedKeys.has(key2) && !localStorage.getItem(key2)) {
-                localAlertedKeys.add(key2);
-                try { localStorage.setItem(key2, 'true'); } catch(e) {}
-                triggerAlert(task, 'Due Now');
+            if (isPreviousDay && currentHour >= 20) {
+                const key = 'notified_cli_8pm_' + task.id;
+                if (!localAlertedKeys.has(key) && !localStorage.getItem(key)) {
+                    localAlertedKeys.add(key);
+                    try { localStorage.setItem(key, 'true'); } catch(e) {}
+                    triggerAlert(task, "Tomorrow's Clinic Appointment");
+                }
+            }
+
+            // 2. Clinic: User Requested Time Before
+            const earlyMinutes = task.clinic_early_minutes ? parseInt(task.clinic_early_minutes) : 60;
+            const earlySeconds = earlyMinutes * 60;
+
+            if (diffSeconds <= earlySeconds && diffSeconds > 0) {
+                const key = 'notified_cli_early_' + task.id;
+                if (!localAlertedKeys.has(key) && !localStorage.getItem(key)) {
+                    localAlertedKeys.add(key);
+                    try { localStorage.setItem(key, 'true'); } catch(e) {}
+                    
+                    const hrText = Math.floor(earlyMinutes / 60);
+                    const minText = earlyMinutes % 60;
+                    const timeString = hrText > 0 ? `${hrText}h ${minText}m` : `${minText} mins`;
+                    triggerAlert(task, `Clinic in ${timeString}`);
+                }
+            }
+
+            // 3. Clinic: At exact time
+            if (now >= taskTime) {
+                const key = 'notified_cli_now_' + task.id;
+                if (!localAlertedKeys.has(key) && !localStorage.getItem(key)) {
+                    localAlertedKeys.add(key);
+                    try { localStorage.setItem(key, 'true'); } catch(e) {}
+                    triggerAlert(task, 'Clinic Time Now');
+                }
             }
         }
     });

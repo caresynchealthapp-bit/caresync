@@ -49,13 +49,13 @@ if ($result) {
         $diff_seconds = $sched_ts - $current_timestamp;
 
         if ($task_type === 'Medicine') {
-            // Stage 1: 5 minutes before medicine time
+            // Email Stage 1: 5 minutes before medicine
             if (!$stage1_done && $diff_seconds <= 300 && $diff_seconds > 0) {
                 $stage_to_send  = 1;
                 $subject_prefix = "Upcoming Medicine in 5 Minutes";
                 $notice_text    = "This is a quick 5-minute reminder to prepare and take the prescribed medicine.";
             }
-            // Stage 2: Exactly at or after medicine time
+            // Email Stage 2: Exactly at or after medicine time
             elseif (!$stage2_done && $current_timestamp >= $sched_ts) {
                 $stage_to_send  = 2;
                 $subject_prefix = "Time to Take Medicine Now";
@@ -64,18 +64,24 @@ if ($result) {
         } 
         elseif ($task_type === 'Clinic Date') {
             $yesterday_of_clinic = date('Y-m-d', strtotime('-1 day', $sched_ts));
+            $early_minutes = isset($task['clinic_early_minutes']) ? (int)$task['clinic_early_minutes'] : 60;
+            $early_seconds = $early_minutes * 60;
 
-            // Stage 1: 8:00 PM (20:00+) the day before clinic date
+            // Email Stage 1: 8:00 PM (20:00+) the day before clinic
             if (!$stage1_done && $today_date_str === $yesterday_of_clinic && $current_time_only >= '20:00') {
                 $stage_to_send  = 1;
                 $subject_prefix = "Tomorrow's Clinic Appointment Reminder";
                 $notice_text    = "Friendly reminder: You have a clinic appointment scheduled for tomorrow.";
             }
-            // Stage 2: 1 hour before clinic appointment time
-            elseif (!$stage2_done && $diff_seconds <= 3600 && $diff_seconds >= -1800) {
+            // Email Stage 2: Custom time before clinic
+            elseif (!$stage2_done && $diff_seconds <= $early_seconds && $diff_seconds > 0) {
                 $stage_to_send  = 2;
-                $subject_prefix = "Clinic Appointment in 1 Hour";
-                $notice_text    = "Your clinic appointment is in 1 hour. Please get ready.";
+                $hr = floor($early_minutes / 60);
+                $min = $early_minutes % 60;
+                $time_str = ($hr > 0 ? "{$hr}h " : "") . "{$min}m";
+                
+                $subject_prefix = "Clinic Appointment in {$time_str}";
+                $notice_text    = "Your clinic appointment is in {$time_str}. Please get ready.";
             }
         }
 

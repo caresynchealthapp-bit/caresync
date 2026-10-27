@@ -47,8 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_task'])) {
     $task_time = $conn->real_escape_string($_POST['task_time']);
     $schedule_time = $task_date . ' ' . $task_time;
     
-    $sql = "INSERT INTO tasks (member_id, task_type, title, instructions, schedule_time, status) 
-            VALUES ($member_id, '$task_type', '$title', '$instructions', '$schedule_time', 'Pending')";
+    // Combine hours and minutes
+    $early_hours = isset($_POST['clinic_early_hours']) ? (int)$_POST['clinic_early_hours'] : 1;
+    $early_minutes = isset($_POST['clinic_early_minutes']) ? (int)$_POST['clinic_early_minutes'] : 0;
+    $total_early_minutes = ($early_hours * 60) + $early_minutes;
+    
+    $sql = "INSERT INTO tasks (member_id, task_type, title, instructions, schedule_time, status, clinic_early_minutes) 
+            VALUES ($member_id, '$task_type', '$title', '$instructions', '$schedule_time', 'Pending', $total_early_minutes)";
     $conn->query($sql);
     header("Location: index.php");
     exit();
@@ -1414,6 +1419,22 @@ function formatDateTime($datetime) {
                                 </div>
                             </div>
 
+                            <div class="form-group" id="clinic-early-container" style="display: none;">
+                            <label>Final Hardware & Email Alert</label>
+                            <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">You will be notified at 8 PM the day before. How early should the final hardware alert trigger on the day of the clinic?</p>
+                            <div style="display: flex; gap: 10px;">
+                                <select name="clinic_early_hours" style="flex: 1;">
+                                    <?php for($i=0; $i<=18; $i++) echo "<option value='$i'".($i==1 ? ' selected' : '').">$i Hour".($i!=1 ? 's' : '')."</option>"; ?>
+                                </select>
+                                <select name="clinic_early_minutes" style="flex: 1;">
+                                    <option value="0" selected>0 Mins</option>
+                                    <option value="15">15 Mins</option>
+                                    <option value="30">30 Mins</option>
+                                    <option value="45">45 Mins</option>
+                                </select>
+                            </div>
+                        </div>
+
                             <div class="form-group">
                                 <label>Dosage / Special Instructions (Optional)</label>
                                 <input type="text" name="instructions" placeholder="e.g. Take 1 tablet after dinner with warm water">
@@ -1533,7 +1554,7 @@ function formatDateTime($datetime) {
     <div id="toast-container" class="toast-container"></div>
 
     <script>
-        const todayTasks = <?php echo json_encode($dashboard_today); ?>;
+        const pendingTasks = <?php echo json_encode(array_merge($dashboard_today, $dashboard_upcoming)); ?>;
         const availableMedicines = <?php echo json_encode($medicines_list); ?>;
 
         // PharmaConnect Supabase Configuration
