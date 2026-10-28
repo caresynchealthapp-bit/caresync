@@ -96,8 +96,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_task'])) {
         
         if ($med_mode === 'hourly') {
             $recurrence_type = "'med_hourly'";
-            $recurrence_interval = max(1, (int)$_POST['med_hourly_interval']);
-            $recurrence_unit = "'hours'";
+            $h = isset($_POST['med_hourly_interval_hours']) ? (int)$_POST['med_hourly_interval_hours'] : 6;
+            $m = isset($_POST['med_hourly_interval_minutes']) ? (int)$_POST['med_hourly_interval_minutes'] : 0;
+            $total_mins = ($h * 60) + $m;
+            
+            $recurrence_interval = max(1, $total_mins);
+            $recurrence_unit = "'minutes'";
         } else {
             $recurrence_type = "'med_daily'";
             $recurrence_unit = "'days'";
@@ -170,9 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
                     $next_time_ts = strtotime("+$interval $unit", $next_time_ts);
                 }
             } elseif ($row['recurrence_type'] === 'med_hourly') {
-                $hours = max(1, (int)$row['recurrence_interval']);
-                // Flexible hourly calculation based on when the user actually took it (or scheduled time if taken on time)
-                $next_time_ts = strtotime("+$hours hours", $base_ts);
+                $interval = max(1, (int)$row['recurrence_interval']);
+                $unit = $row['recurrence_unit'] ?: 'minutes';
+                $next_time_ts = strtotime("+$interval $unit", $base_ts);
             } elseif ($row['recurrence_type'] === 'med_daily') {
                 $times = json_decode($row['daily_times'], true);
                 if (is_array($times) && count($times) > 0) {
@@ -1623,20 +1627,25 @@ function formatDateTime($datetime) {
                     <div class="form-group">
                         <label>Repeat Mode</label>
                         <select name="med_repeat_mode" onchange="handleMedRepeatMode(this)">
-                            <option value="hourly">Hourly Repeat (e.g. Every 6 hours like Panadol)</option>
-                            <option value="daily">Specific Times per Day (1x, 2x, 3x, 4x daily)</option>
+                            <option value="hourly">Hourly Repeat </option>
+                            <option value="daily">Specific Times per Day</option>
                         </select>
                     </div>
 
                     <!-- Hourly Option -->
                     <div class="form-group med-hourly-box">
-                        <label>Repeat Every (Hours)</label>
-                        <select name="med_hourly_interval">
-                            <option value="4">Every 4 Hours</option>
-                            <option value="6" selected>Every 6 Hours (6 by 6 hrs)</option>
-                            <option value="8">Every 8 Hours</option>
-                            <option value="12">Every 12 Hours</option>
-                        </select>
+                        <label>Repeat Every (Hours & Minutes)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <!-- Hours: 0 to 12 -->
+                            <select name="med_hourly_interval_hours" style="flex: 1;">
+                                <?php for($i=0; $i<=12; $i++) echo "<option value='$i'".($i==6 ? ' selected' : '').">$i Hour".($i!=1 ? 's' : '')."</option>"; ?>
+                            </select>
+                            
+                            <!-- Minutes: 0 to 59 -->
+                            <select name="med_hourly_interval_minutes" style="flex: 1;">
+                                <?php for($m=0; $m<=59; $m++) echo "<option value='$m'>$m Min".($m!=1 ? 's' : '')."</option>"; ?>
+                            </select>
+                        </div>
                     </div>
 
                     <!-- Daily Times Count Option -->
@@ -1644,9 +1653,10 @@ function formatDateTime($datetime) {
                         <label>How Many Times a Day?</label>
                         <select onchange="updateDailyTimeSlots(this)">
                             <option value="1">Once a day</option>
-                            <option value="2" selected>2 times a day (e.g. 9:00 AM, 10:00 PM)</option>
-                            <option value="3">3 times a day (e.g. 9:00 AM, 2:00 PM, 8:00 PM)</option>
+                            <option value="2" selected>2 times a day</option>
+                            <option value="3">3 times a day</option>
                             <option value="4">4 times a day</option>
+                            <option value="5">5 times a day</option>
                         </select>
                     </div>
                 </div>
@@ -1655,8 +1665,8 @@ function formatDateTime($datetime) {
                 <div class="med-daily-times-container" style="display:none; margin-bottom:14px;">
                     <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:8px;">Customize Daily Dose Times (Flexible for your schedule):</label>
                     <div class="daily-slots-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
-                        <input type="time" name="med_daily_times[]" value="09:00">
-                        <input type="time" name="med_daily_times[]" value="22:00">
+                        <input type="time" name="med_daily_times[]" value="00:00">
+                        <input type="time" name="med_daily_times[]" value="00:00">
                     </div>
                 </div>
 
@@ -1959,12 +1969,13 @@ function updateDailyTimeSlots(selectElem) {
     const count = parseInt(selectElem.value, 10);
     const grid = selectElem.closest('.med-recurrence-body').querySelector('.daily-slots-grid');
     const presets = {
-        1: ['09:00'],
-        2: ['09:00', '22:00'],
-        3: ['09:00', '14:00', '20:00'],
-        4: ['08:00', '12:00', '16:00', '20:00']
+        1: ['00:00'],
+        2: ['00:00', '00:00'],
+        3: ['00:00', '00:00', '00:00'],
+        4: ['08:00', '00:00', '00:00', '00:00'],
+        5: ['06:00', '00:00', '0:00', '00:00', '00:00']
     };
-    const times = presets[count] || ['09:00'];
+    const times = presets[count] || ['00:00'];
     grid.innerHTML = times.map(t => `<input type="time" name="med_daily_times[]" value="${t}" required>`).join('');
 }
 
