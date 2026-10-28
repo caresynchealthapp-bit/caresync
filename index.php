@@ -935,13 +935,6 @@ function formatDateTime($datetime) {
                     <span class="btn-text-label">Smart Light & Buzzer</span>
                 </button>
 
-                <!-- Clickable User ID Pill -->
-                <div class="user-id-badge" onclick="copyUserId('<?php echo addslashes($user_id); ?>')" title="Click to copy your User ID">
-                    <i class="fas fa-id-badge"></i>
-                    <span>ID: <?php echo htmlspecialchars($user_id); ?></span>
-                    <i class="far fa-copy" style="font-size: 11px; opacity: 0.75;"></i>
-                </div>
-
                 <button id="desktop-bell-btn" class="notification-btn" style="background:#f1f5f9; border:none; width:38px; height:38px; border-radius:10px; font-size:18px; color:#475569; margin-right:16px; cursor:pointer; transition:all 0.2s;" title="Enable Notifications">
                     <i class="fas fa-bell"></i>
                 </button>
