@@ -36,44 +36,210 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_member_id'])) {
     exit();
 }
 
+// --- 2.5 AUTO-CLEANUP OLD COMPLETED LOGS ---
+// Delete completed Clinic logs older than 1 year, and Medicine logs older than 6 months
+$one_year_ago = date('Y-m-d H:i:s', strtotime('-1 year'));
+$six_months_ago = date('Y-m-d H:i:s', strtotime('-6 months'));
+
+$conn->query("DELETE FROM tasks WHERE task_type = 'Clinic Date' AND status LIKE 'Done%' AND COALESCE(completed_at, schedule_time) < '$one_year_ago'");
+$conn->query("DELETE FROM tasks WHERE task_type = 'Medicine' AND status LIKE 'Done%' AND COALESCE(completed_at, schedule_time) < '$six_months_ago'");
+
 // --- 3. HANDLE ADDING TASK ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_task'])) {
     $member_id = (int)$_POST['member_id'];
     $task_type = $conn->real_escape_string($_POST['task_type']);
-    $title = $conn->real_escape_string($_POST['title']);
     $instructions = $conn->real_escape_string($_POST['instructions']);
-    
     $task_date = $conn->real_escape_string($_POST['task_date']);
     $task_time = $conn->real_escape_string($_POST['task_time']);
-    $schedule_time = $task_date . ' ' . $task_time;
     
-    // Combine hours and minutes
+    // Combine multi-medicine inputs if Medicine, otherwise single clinic title
+    if ($task_type === 'Medicine' && isset($_POST['med_titles']) && is_array($_POST['med_titles'])) {
+        $clean_meds = array_filter(array_map('trim', $_POST['med_titles']));
+        $title = $conn->real_escape_string(implode(', ', $clean_meds));
+    } else {
+        $title = $conn->real_escape_string($_POST['title']);
+    }
+
     $early_hours = isset($_POST['clinic_early_hours']) ? (int)$_POST['clinic_early_hours'] : 1;
     $early_minutes = isset($_POST['clinic_early_minutes']) ? (int)$_POST['clinic_early_minutes'] : 0;
     $total_early_minutes = ($early_hours * 60) + $early_minutes;
-    
-    $sql = "INSERT INTO tasks (member_id, task_type, title, instructions, schedule_time, status, clinic_early_minutes) 
-            VALUES ($member_id, '$task_type', '$title', '$instructions', '$schedule_time', 'Pending', $total_early_minutes)";
+
+    $is_recurring = 0;
+    $recurrence_type = "NULL";
+    $recurrence_interval = "NULL";
+    $recurrence_unit = "NULL";
+    $daily_times_sql = "NULL";
+    $recurrence_end_type = "'forever'";
+    $recurrence_end_date = "NULL";
+    $schedule_time = $task_date . ' ' . $task_time;
+
+    // A. Clinic Rescheduling Setup
+    if ($task_type === 'Clinic Date' && !empty($_POST['clinic_is_recurring'])) {
+        $is_recurring = 1;
+        $recurrence_type = "'clinic_interval'";
+        $recurrence_interval = (int)$_POST['clinic_freq_val'];
+        $unit = $conn->real_escape_string($_POST['clinic_freq_unit']);
+        $recurrence_unit = "'$unit'";
+        
+        $end_type = $conn->real_escape_string($_POST['clinic_end_type']);
+        $recurrence_end_type = "'$end_type'";
+        if ($end_type === 'date' && !empty($_POST['clinic_end_date'])) {
+            $end_d = $conn->real_escape_string($_POST['clinic_end_date']);
+            $recurrence_end_date = "'$end_d'";
+        }
+    }
+
+    // B. Medicine Rescheduling Setup
+    if ($task_type === 'Medicine' && !empty($_POST['med_is_recurring'])) {
+        $is_recurring = 1;
+        $med_mode = $_POST['med_repeat_mode']; // 'hourly' or 'daily'
+        
+        if ($med_mode === 'hourly') {
+            $recurrence_type = "'med_hourly'";
+            $recurrence_interval = max(1, (int)$_POST['med_hourly_interval']);
+            $recurrence_unit = "'hours'";
+        } else {
+            $recurrence_type = "'med_daily'";
+            $recurrence_unit = "'days'";
+            $raw_times = isset($_POST['med_daily_times']) && is_array($_POST['med_daily_times']) ? $_POST['med_daily_times'] : [$task_time];
+            $clean_times = array_values(array_filter(array_map('trim', $raw_times)));
+            sort($clean_times);
+            if (empty($clean_times)) $clean_times = [$task_time];
+            
+            // Set initial schedule time to the first upcoming slot on or after task_date
+            $first_slot_found = false;
+            foreach ($clean_times as $t) {
+                if ($task_date . ' ' . $t >= $task_date . ' ' . $task_time) {
+                    $schedule_time = $task_date . ' ' . $t;
+                    $first_slot_found = true;
+                    break;
+                }
+            }
+            if (!$first_slot_found) {
+                $schedule_time = $task_date . ' ' . $clean_times[0];
+            }
+            
+            $json_times = $conn->real_escape_string(json_encode($clean_times));
+            $daily_times_sql = "'$json_times'";
+        }
+
+        $end_type = $conn->real_escape_string($_POST['med_end_type']);
+        $recurrence_end_type = "'$end_type'";
+        if ($end_type === 'date' && !empty($_POST['med_end_date'])) {
+            $end_d = $conn->real_escape_string($_POST['med_end_date']);
+            $recurrence_end_date = "'$end_d'";
+        }
+    }
+
+    $sql = "INSERT INTO tasks (
+                member_id, task_type, title, instructions, schedule_time, status, clinic_early_minutes,
+                is_recurring, recurrence_type, recurrence_interval, recurrence_unit, daily_times, recurrence_end_type, recurrence_end_date
+            ) VALUES (
+                $member_id, '$task_type', '$title', '$instructions', '$schedule_time', 'Pending', $total_early_minutes,
+                $is_recurring, $recurrence_type, $recurrence_interval, $recurrence_unit, $daily_times_sql, $recurrence_end_type, $recurrence_end_date
+            )";
     $conn->query($sql);
     header("Location: index.php");
     exit();
 }
 
-// --- 4. HANDLE MARK AS DONE ---
+// --- 4. HANDLE MARK AS DONE & SPAWN NEXT RECURRING TASK ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
     $task_id = (int)$_POST['mark_done_id'];
     
-    $check_sql = "SELECT schedule_time FROM tasks WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id') LIMIT 1";
+    $check_sql = "SELECT * FROM tasks WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id') LIMIT 1";
     $result = $conn->query($check_sql);
     $row = ($result) ? $result->fetch_assoc() : null;
     
     if ($row) {
         $scheduled_time = $row['schedule_time'];
-        $current_time = date('Y-m-d H:i'); 
-        $new_status = ($current_time > $scheduled_time) ? 'Done_Late' : 'Done_OnTime';
-        $conn->query("UPDATE tasks SET status='$new_status' WHERE id=$task_id");
+        $current_time = date('Y-m-d H:i:s');
+        $new_status = (substr($current_time, 0, 16) > substr($scheduled_time, 0, 16)) ? 'Done_Late' : 'Done_OnTime';
+        $conn->query("UPDATE tasks SET status='$new_status', completed_at='$current_time' WHERE id=$task_id");
+
+        // If recurring is active, calculate and insert ONLY the immediate next occurrence
+        if ((int)$row['is_recurring'] === 1) {
+            $next_time_ts = null;
+            $base_ts = max(strtotime($scheduled_time), time()); // Flexible for busy users so next dose isn't stuck in the past
+
+            if ($row['recurrence_type'] === 'clinic_interval') {
+                $interval = max(1, (int)$row['recurrence_interval']);
+                $unit = $row['recurrence_unit'] ?: 'weeks';
+                $next_time_ts = strtotime("+$interval $unit", strtotime($scheduled_time));
+                while ($next_time_ts <= time()) {
+                    $next_time_ts = strtotime("+$interval $unit", $next_time_ts);
+                }
+            } elseif ($row['recurrence_type'] === 'med_hourly') {
+                $hours = max(1, (int)$row['recurrence_interval']);
+                // Flexible hourly calculation based on when the user actually took it (or scheduled time if taken on time)
+                $next_time_ts = strtotime("+$hours hours", $base_ts);
+            } elseif ($row['recurrence_type'] === 'med_daily') {
+                $times = json_decode($row['daily_times'], true);
+                if (is_array($times) && count($times) > 0) {
+                    sort($times);
+                    $sched_date = date('Y-m-d', $base_ts);
+                    $sched_hm = date('H:i', strtotime($scheduled_time));
+                    $found_next = false;
+
+                    // Find next slot later on the same day
+                    foreach ($times as $t) {
+                        $candidate_ts = strtotime("$sched_date $t");
+                        if ($t > $sched_hm && $candidate_ts > time()) {
+                            $next_time_ts = $candidate_ts;
+                            $found_next = true;
+                            break;
+                        }
+                    }
+                    // Otherwise, first slot tomorrow
+                    if (!$found_next) {
+                        $tomorrow = date('Y-m-d', strtotime('+1 day', $base_ts));
+                        $next_time_ts = strtotime("$tomorrow " . $times[0]);
+                    }
+                }
+            }
+
+            // Verify end condition before inserting the next occurrence
+            $can_spawn = true;
+            if ($row['recurrence_end_type'] === 'date' && !empty($row['recurrence_end_date'])) {
+                if ($next_time_ts > strtotime($row['recurrence_end_date'])) {
+                    $can_spawn = false;
+                }
+            }
+
+            if ($can_spawn && $next_time_ts) {
+                $next_schedule_str = date('Y-m-d H:i', $next_time_ts);
+                $m_id = (int)$row['member_id'];
+                $t_type = $conn->real_escape_string($row['task_type']);
+                $t_title = $conn->real_escape_string($row['title']);
+                $t_inst = $conn->real_escape_string($row['instructions']);
+                $c_early = (int)$row['clinic_early_minutes'];
+                $r_type = $row['recurrence_type'] ? "'" . $conn->real_escape_string($row['recurrence_type']) . "'" : "NULL";
+                $r_int = $row['recurrence_interval'] ? (int)$row['recurrence_interval'] : "NULL";
+                $r_unit = $row['recurrence_unit'] ? "'" . $conn->real_escape_string($row['recurrence_unit']) . "'" : "NULL";
+                $d_times = $row['daily_times'] ? "'" . $conn->real_escape_string($row['daily_times']) . "'" : "NULL";
+                $r_end_type = "'" . $conn->real_escape_string($row['recurrence_end_type']) . "'";
+                $r_end_date = $row['recurrence_end_date'] ? "'" . $conn->real_escape_string($row['recurrence_end_date']) . "'" : "NULL";
+
+                $spawn_sql = "INSERT INTO tasks (
+                    member_id, task_type, title, instructions, schedule_time, status, clinic_early_minutes,
+                    is_recurring, recurrence_type, recurrence_interval, recurrence_unit, daily_times, recurrence_end_type, recurrence_end_date
+                ) VALUES (
+                    $m_id, '$t_type', '$t_title', '$t_inst', '$next_schedule_str', 'Pending', $c_early,
+                    1, $r_type, $r_int, $r_unit, $d_times, $r_end_type, $r_end_date
+                )";
+                $conn->query($spawn_sql);
+            }
+        }
     }
     
+    header("Location: index.php");
+    exit();
+}
+
+// --- 4.5 HANDLE STOPPING RECURRING SCHEDULE (MEMBER PROFILE ONLY) ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['stop_recurrence_id'])) {
+    $task_id = (int)$_POST['stop_recurrence_id'];
+    $conn->query("UPDATE tasks SET is_recurring = 0 WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id')");
     header("Location: index.php");
     exit();
 }
@@ -81,7 +247,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['mark_done_id'])) {
 // --- 5. HANDLE DELETING TASK ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_task_id'])) {
     $task_id = (int)$_POST['delete_task_id'];
-    // Ensure the task belongs to a member owned by this user for security
     $conn->query("DELETE FROM tasks WHERE id=$task_id AND member_id IN (SELECT id FROM members WHERE user_id='$user_id')");
     header("Location: index.php");
     exit();
@@ -1318,28 +1483,45 @@ function formatDateTime($datetime) {
                         <!-- Member's Pending Tasks -->
                         <div class="dash-column">
                             <h3><i class="fas fa-hourglass-half" style="color: var(--cs-warning);"></i> Pending Schedule</h3>
-                            <?php 
-                            $has_pending = false;
-                            foreach($this_member_tasks as $task) {
-                                if($task['status'] == 'Pending') {
-                                    $has_pending = true;
-                                    echo "<div class='task-item' style='border-left:5px solid var(--cs-primary) !important; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;'>";
-                                    echo "<div>";
-                                    echo "<h4 style='margin:0 0 4px 0; font-weight:800;'>".htmlspecialchars($task['title'])."</h4>";
-                                    echo "<p style='font-size:13px; color:var(--cs-text-muted); margin:0;'><i class='far fa-clock'></i> ".formatDateTime($task['schedule_time'])."</p>";
-                                    if (!empty($task['instructions'])) {
-                                        echo "<p style='font-size:12.5px; margin:6px 0 0 0; color:#475569;'>".htmlspecialchars($task['instructions'])."</p>";
+                                <?php 
+                                $has_pending = false;
+                                foreach($this_member_tasks as $task) {
+                                    if($task['status'] == 'Pending') {
+                                        $has_pending = true;
+                                        echo "<div class='task-item' style='border-left:5px solid var(--cs-primary) !important; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;'>";
+                                        echo "<div>";
+                                        echo "<div style='display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;'>";
+                                        echo "<h4 style='margin:0; font-weight:800;'>".htmlspecialchars($task['title'])."</h4>";
+                                        if (!empty($task['is_recurring'])) {
+                                            echo "<span style='background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;'><i class='fas fa-sync-alt'></i> Auto-Repeating</span>";
+                                        }
+                                        echo "</div>";
+                                        echo "<p style='font-size:13px; color:var(--cs-text-muted); margin:0;'><i class='far fa-clock'></i> ".formatDateTime($task['schedule_time'])."</p>";
+                                        if (!empty($task['instructions'])) {
+                                            echo "<p style='font-size:12.5px; margin:6px 0 0 0; color:#475569;'>".htmlspecialchars($task['instructions'])."</p>";
+                                        }
+                                        echo "</div>";
+
+                                        echo "<div style='display:flex; gap:8px; align-items:center; flex-wrap:wrap;'>";
+                                        if ($task['task_type'] === 'Medicine') {
+                                            $safeTitle = addslashes($task['title']);
+                                            echo "<button type='button' class='btn-action-find find-med-btn' onclick=\"findNearestPharmacies('{$safeTitle}')\"><i class='fas fa-map-marker-alt'></i> Find a Pharmacy</button>";
+                                        }
+                                        // Cancel Rescheduling Loop Button (ONLY in Member Profile, never on Main Dashboard)
+                                        if (!empty($task['is_recurring'])) {
+                                            echo "<form action='index.php' method='POST' style='margin:0;' onsubmit=\"return confirm('Stop future automatic rescheduling for this task?');\">
+                                                    <input type='hidden' name='stop_recurrence_id' value='{$task['id']}'>
+                                                    <button type='submit' style='background:#fff1f2; color:#be123c; border:1px solid #fecdd3; padding:8px 12px; border-radius:10px; font-weight:700; font-size:12.5px; cursor:pointer;'>
+                                                        <i class='fas fa-stop-circle'></i> Stop Repeat
+                                                    </button>
+                                                </form>";
+                                        }
+                                        echo "</div>";
+                                        echo "</div>";
                                     }
-                                    echo "</div>";
-                                    if ($task['task_type'] === 'Medicine') {
-                                        $safeTitle = addslashes($task['title']);
-                                        echo "<button type='button' class='btn-action-find find-med-btn' onclick=\"findNearestPharmacies('{$safeTitle}')\"><i class='fas fa-map-marker-alt'></i> Find a Pharmacy</button>";
-                                    }
-                                    echo "</div>";
                                 }
-                            }
-                            if(!$has_pending) echo "<p class='empty-state' style='text-align:center; color:#94a3b8; padding:20px;'>No pending tasks.</p>";
-                            ?>
+                                if(!$has_pending) echo "<p class='empty-state' style='text-align:center; color:#94a3b8; padding:20px;'>No pending tasks.</p>";
+                                ?>
                         </div>
 
                         <!-- Member's History Log -->
@@ -1369,73 +1551,194 @@ function formatDateTime($datetime) {
                     </div>
 
                     <!-- FORM TO ADD TASK -->
-                    <div class="form-card">
-                        <h3 style="margin: 0 0 18px 0; font-weight:800;"><i class="fas fa-calendar-plus" style="color:var(--cs-primary);"></i> Schedule New Medicine or Clinic</h3>
-                        <form action="index.php" method="POST">
-                            <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
-                            
-                            <div class="two-col">
-                                <div class="form-group">
-                                    <label>Schedule Type</label>
-                                    <select name="task_type" class="task-type-select" onchange="handleTaskTypeChange(this)" required>
-                                        <option value="Medicine">Medicine Prescription</option>
-                                        <option value="Clinic Date">Clinic Appointment</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="title-label">Medicine Name</label>
-                                    <div style="display: flex; gap: 8px;">
-                                        <input type="text" 
-                                               name="title" 
-                                               class="task-title-input" 
-                                               required 
-                                               placeholder="Start typing medicine (e.g. Paracetamol)..." 
-                                               autocomplete="off"
-                                               oninput="handleMedicineInput(this)">
-                                        <button type="button" class="btn-action-find find-med-btn" style="white-space: nowrap;" onclick="findNearestPharmacies(this.previousElementSibling.value)">
-                                            <i class="fas fa-map-marker-alt"></i> Find a Pharmacy
-                                        </button>
-                                    </div>
-                                    <div class="med-suggestions-box" style="display: none;"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="two-col">
-                                <div class="form-group">
-                                    <label>Scheduled Date</label>
-                                    <input type="date" name="task_date" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Scheduled Time</label>
-                                    <input type="time" name="task_time" required>
-                                </div>
-                            </div>
-
-                            <div class="form-group clinic-early-container" style="display: none;">
-                                <label>Final Hardware & Email Alert</label>
-                                <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">You will be notified at 8 PM the day before. How early should the final hardware alert trigger on the day of the clinic?</p>
-                                <div style="display: flex; gap: 10px;">
-                                    <select name="clinic_early_hours" style="flex: 1;">
-                                        <?php for($i=0; $i<=18; $i++) echo "<option value='$i'".($i==1 ? ' selected' : '').">$i Hour".($i!=1 ? 's' : '')."</option>"; ?>
-                                    </select>
-                                    <select name="clinic_early_minutes" style="flex: 1;">
-                                        <option value="0" selected>0 Mins</option>
-                                        <option value="15">15 Mins</option>
-                                        <option value="30">30 Mins</option>
-                                        <option value="45">45 Mins</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Dosage / Special Instructions (Optional)</label>
-                                <input type="text" name="instructions" placeholder="e.g. Take 1 tablet after dinner with warm water">
-                            </div>
-                            
-                            <button type="submit" name="add_task" class="btn-primary"><i class="fas fa-plus-circle"></i> Save to Schedule</button>
-                        </form>
+<div class="form-card">
+    <h3 style="margin: 0 0 18px 0; font-weight:800;"><i class="fas fa-calendar-plus" style="color:var(--cs-primary);"></i> Schedule New Medicine or Clinic</h3>
+    <form action="index.php" method="POST">
+        <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
+        
+        <div class="two-col">
+            <div class="form-group">
+                <label>Schedule Type</label>
+                <select name="task_type" class="task-type-select" onchange="handleTaskTypeChange(this)" required>
+                    <option value="Medicine">Medicine Prescription</option>
+                    <option value="Clinic Date">Clinic Appointment</option>
+                </select>
+            </div>
+            
+            <!-- Multi-Medicine / Single Clinic Input Area -->
+            <div class="form-group">
+                <label class="title-label">Medicine Name(s)</label>
+                
+                <!-- Medicine Multi-List Container -->
+                <div class="multi-med-wrapper">
+                    <div class="med-inputs-list">
+                        <div class="med-input-row" style="position:relative; display:flex; gap:8px; margin-bottom:8px;">
+                            <input type="text" 
+                                   name="med_titles[]" 
+                                   class="task-title-input" 
+                                   required 
+                                   placeholder="Start typing medicine (e.g. Panadol)..." 
+                                   autocomplete="off"
+                                   oninput="handleMedicineInput(this)">
+                            <div class="med-suggestions-box" style="display: none;"></div>
+                        </div>
                     </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;">
+                        <button type="button" onclick="addAnotherMedicineInput(this)" style="background:#eff6ff; color:#1d4ed8; border:1px dashed #93c5fd; padding:7px 12px; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer;">
+                            <i class="fas fa-plus"></i> Add Another Medicine
+                        </button>
+                        <button type="button" class="btn-action-find find-med-btn" onclick="findPharmaciesFromForm(this)">
+                            <i class="fas fa-map-marker-alt"></i> Find Closest Pharmacy for All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Clinic Single Input (Hidden by default until Clinic Date selected) -->
+                <div class="clinic-input-wrapper" style="display:none;">
+                    <input type="text" name="title" class="clinic-title-input" placeholder="e.g. National Hospital Cardiology Clinic">
+                </div>
+            </div>
+        </div>
+        
+        <div class="two-col">
+            <div class="form-group">
+                <label>Start / Scheduled Date</label>
+                <input type="date" name="task_date" required>
+            </div>
+            <div class="form-group">
+                <label class="time-label">First Dose / Scheduled Time</label>
+                <input type="time" name="task_time" class="task-time-input" required>
+            </div>
+        </div>
+
+        <!-- MEDICINE RESCHEDULING OPTIONS -->
+        <div class="med-recurrence-section" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:18px;">
+            <label style="display:flex; align-items:center; gap:10px; font-weight:700; cursor:pointer; margin:0;">
+                <input type="checkbox" name="med_is_recurring" value="1" style="width:18px; height:18px;" onchange="toggleMedRecurrence(this)">
+                <span><i class="fas fa-redo" style="color:var(--cs-primary);"></i> Repeat / Reschedule this Medicine Automatically</span>
+            </label>
+
+            <div class="med-recurrence-body" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid #e2e8f0;">
+                <div class="two-col">
+                    <div class="form-group">
+                        <label>Repeat Mode</label>
+                        <select name="med_repeat_mode" onchange="handleMedRepeatMode(this)">
+                            <option value="hourly">Hourly Repeat (e.g. Every 6 hours like Panadol)</option>
+                            <option value="daily">Specific Times per Day (1x, 2x, 3x, 4x daily)</option>
+                        </select>
+                    </div>
+
+                    <!-- Hourly Option -->
+                    <div class="form-group med-hourly-box">
+                        <label>Repeat Every (Hours)</label>
+                        <select name="med_hourly_interval">
+                            <option value="4">Every 4 Hours</option>
+                            <option value="6" selected>Every 6 Hours (6 by 6 hrs)</option>
+                            <option value="8">Every 8 Hours</option>
+                            <option value="12">Every 12 Hours</option>
+                        </select>
+                    </div>
+
+                    <!-- Daily Times Count Option -->
+                    <div class="form-group med-daily-count-box" style="display:none;">
+                        <label>How Many Times a Day?</label>
+                        <select onchange="updateDailyTimeSlots(this)">
+                            <option value="1">Once a day</option>
+                            <option value="2" selected>2 times a day (e.g. 9:00 AM, 10:00 PM)</option>
+                            <option value="3">3 times a day (e.g. 9:00 AM, 2:00 PM, 8:00 PM)</option>
+                            <option value="4">4 times a day</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dynamic Daily Time Pickers -->
+                <div class="med-daily-times-container" style="display:none; margin-bottom:14px;">
+                    <label style="font-size:13px; font-weight:700; color:#334155; display:block; margin-bottom:8px;">Customize Daily Dose Times (Flexible for your schedule):</label>
+                    <div class="daily-slots-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+                        <input type="time" name="med_daily_times[]" value="09:00">
+                        <input type="time" name="med_daily_times[]" value="22:00">
+                    </div>
+                </div>
+
+                <!-- End Condition for Medicine -->
+                <div class="two-col">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>How Long Should It Repeat?</label>
+                        <select name="med_end_type" onchange="toggleEndDateInput(this, '.med-end-date-box')">
+                            <option value="forever">Until I Stop (Forever)</option>
+                            <option value="date">Until a Specific End Date & Time</option>
+                        </select>
+                    </div>
+                    <div class="form-group med-end-date-box" style="display:none; margin-bottom:0;">
+                        <label>End Date & Time</label>
+                        <input type="datetime-local" name="med_end_date">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLINIC EARLY ALERT & CLINIC RESCHEDULING OPTIONS -->
+        <div class="clinic-early-container" style="display: none;">
+            <div class="form-group">
+                <label>Final Hardware & Email Alert</label>
+                <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">You will be notified at 8 PM the day before. How early should the final hardware alert trigger on the day of the clinic?</p>
+                <div style="display: flex; gap: 10px;">
+                    <select name="clinic_early_hours" style="flex: 1;">
+                        <?php for($i=0; $i<=18; $i++) echo "<option value='$i'".($i==1 ? ' selected' : '').">$i Hour".($i!=1 ? 's' : '')."</option>"; ?>
+                    </select>
+                    <select name="clinic_early_minutes" style="flex: 1;">
+                        <option value="0" selected>0 Mins</option>
+                        <option value="15">15 Mins</option>
+                        <option value="30">30 Mins</option>
+                        <option value="45">45 Mins</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Clinic Reschedule Checkbox & Settings -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:18px;">
+                <label style="display:flex; align-items:center; gap:10px; font-weight:700; cursor:pointer; margin:0;">
+                    <input type="checkbox" name="clinic_is_recurring" value="1" style="width:18px; height:18px;" onchange="toggleClinicRecurrence(this)">
+                    <span><i class="fas fa-calendar-alt" style="color:var(--cs-primary);"></i> Reschedule this Clinic Automatically</span>
+                </label>
+
+                <div class="clinic-recurrence-body" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid #e2e8f0;">
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label>Reschedule Every</label>
+                            <div style="display:flex; gap:8px;">
+                                <input type="number" name="clinic_freq_val" value="1" min="1" style="width:90px;">
+                                <select name="clinic_freq_unit" style="flex:1;">
+                                    <option value="days">Day(s)</option>
+                                    <option value="weeks">Week(s)</option>
+                                    <option value="months" selected>Month(s)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>End Rescheduling</label>
+                            <select name="clinic_end_type" onchange="toggleEndDateInput(this, '.clinic-end-date-box')">
+                                <option value="forever">Until I Stop</option>
+                                <option value="date">Select End Date & Time</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group clinic-end-date-box" style="display:none; margin-bottom:0;">
+                        <label>Rescheduling End Date & Time</label>
+                        <input type="datetime-local" name="clinic_end_date">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Dosage / Special Instructions (Optional)</label>
+            <input type="text" name="instructions" placeholder="e.g. Take 1 tablet after dinner with warm water">
+        </div>
+        
+        <button type="submit" name="add_task" class="btn-primary"><i class="fas fa-plus-circle"></i> Save to Schedule</button>
+    </form>
+</div>
                 </div>
             <?php } ?>
 
@@ -1576,204 +1879,283 @@ function formatDateTime($datetime) {
             });
         }
 
-        function handleTaskTypeChange(selectElem) {
-            const formCard = selectElem.closest('.form-card');
-            const labelElem = formCard.querySelector('.title-label');
-            const inputElem = formCard.querySelector('.task-title-input');
-            const findBtn = formCard.querySelector('.find-med-btn');
-            const box = formCard.querySelector('.med-suggestions-box');
-            
-            // Find the container using the class instead of an ID
-            const earlyContainer = formCard.querySelector('.clinic-early-container');
+function handleTaskTypeChange(selectElem) {
+    const formCard = selectElem.closest('.form-card');
+    const labelElem = formCard.querySelector('.title-label');
+    const multiMedWrapper = formCard.querySelector('.multi-med-wrapper');
+    const clinicInputWrapper = formCard.querySelector('.clinic-input-wrapper');
+    const clinicInput = formCard.querySelector('.clinic-title-input');
+    const medInputs = formCard.querySelectorAll('.task-title-input');
+    const earlyContainer = formCard.querySelector('.clinic-early-container');
+    const medRecurrenceSection = formCard.querySelector('.med-recurrence-section');
 
-            if (selectElem.value === 'Clinic Date') {
-                labelElem.innerText = 'Clinic / Hospital Name';
-                inputElem.placeholder = 'e.g. National Hospital Cardiology Clinic';
-                if (findBtn) findBtn.style.display = 'none';
-                if (box) box.style.display = 'none';
-                if (earlyContainer) earlyContainer.style.display = 'block'; // Show dropdowns
-            } else {
-                labelElem.innerText = 'Medicine Name';
-                inputElem.placeholder = 'Start typing medicine (e.g. Paracetamol)...';
-                if (findBtn) findBtn.style.display = 'inline-flex';
-                if (earlyContainer) earlyContainer.style.display = 'none';  // Hide dropdowns
-            }
-        }
-        function handleMedicineInput(inputElem) {
-            const formCard = inputElem.closest('.form-card');
-            const selectElem = formCard.querySelector('.task-type-select');
-            const box = formCard.querySelector('.med-suggestions-box');
+    if (selectElem.value === 'Clinic Date') {
+        labelElem.innerText = 'Clinic / Hospital Name';
+        multiMedWrapper.style.display = 'none';
+        clinicInputWrapper.style.display = 'block';
+        clinicInput.required = true;
+        medInputs.forEach(inp => inp.required = false);
+        if (earlyContainer) earlyContainer.style.display = 'block';
+        if (medRecurrenceSection) medRecurrenceSection.style.display = 'none';
+    } else {
+        labelElem.innerText = 'Medicine Name(s)';
+        multiMedWrapper.style.display = 'block';
+        clinicInputWrapper.style.display = 'none';
+        clinicInput.required = false;
+        if (medInputs[0]) medInputs[0].required = true;
+        if (earlyContainer) earlyContainer.style.display = 'none';
+        if (medRecurrenceSection) medRecurrenceSection.style.display = 'block';
+    }
+}
 
-            if (selectElem.value !== 'Medicine') {
+function addAnotherMedicineInput(btn) {
+    const wrapper = btn.closest('.multi-med-wrapper').querySelector('.med-inputs-list');
+    const row = document.createElement('div');
+    row.className = 'med-input-row';
+    row.style.cssText = 'position:relative; display:flex; gap:8px; margin-bottom:8px;';
+    row.innerHTML = `
+        <input type="text" name="med_titles[]" class="task-title-input" required placeholder="Enter another medicine..." autocomplete="off" oninput="handleMedicineInput(this)">
+        <button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2; color:#ef4444; border:none; padding:0 12px; border-radius:8px; cursor:pointer;" title="Remove"><i class="fas fa-times"></i></button>
+        <div class="med-suggestions-box" style="display: none;"></div>
+    `;
+    wrapper.appendChild(row);
+}
+
+function findPharmaciesFromForm(btn) {
+    const wrapper = btn.closest('.multi-med-wrapper');
+    const inputs = wrapper.querySelectorAll('.task-title-input');
+    const meds = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+    findNearestPharmacies(meds.join(', '));
+}
+
+function toggleMedRecurrence(checkbox) {
+    const body = checkbox.closest('.med-recurrence-section').querySelector('.med-recurrence-body');
+    body.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function toggleClinicRecurrence(checkbox) {
+    const body = checkbox.closest('.clinic-early-container').querySelector('.clinic-recurrence-body');
+    body.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function handleMedRepeatMode(selectElem) {
+    const body = selectElem.closest('.med-recurrence-body');
+    const hourlyBox = body.querySelector('.med-hourly-box');
+    const dailyCountBox = body.querySelector('.med-daily-count-box');
+    const dailyTimesContainer = body.querySelector('.med-daily-times-container');
+
+    if (selectElem.value === 'hourly') {
+        hourlyBox.style.display = 'block';
+        dailyCountBox.style.display = 'none';
+        dailyTimesContainer.style.display = 'none';
+    } else {
+        hourlyBox.style.display = 'none';
+        dailyCountBox.style.display = 'block';
+        dailyTimesContainer.style.display = 'block';
+    }
+}
+
+function updateDailyTimeSlots(selectElem) {
+    const count = parseInt(selectElem.value, 10);
+    const grid = selectElem.closest('.med-recurrence-body').querySelector('.daily-slots-grid');
+    const presets = {
+        1: ['09:00'],
+        2: ['09:00', '22:00'],
+        3: ['09:00', '14:00', '20:00'],
+        4: ['08:00', '12:00', '16:00', '20:00']
+    };
+    const times = presets[count] || ['09:00'];
+    grid.innerHTML = times.map(t => `<input type="time" name="med_daily_times[]" value="${t}" required>`).join('');
+}
+
+function toggleEndDateInput(selectElem, targetSelector) {
+    const container = selectElem.closest('.med-recurrence-body, .clinic-recurrence-body');
+    const target = container.querySelector(targetSelector);
+    if (target) {
+        target.style.display = (selectElem.value === 'date') ? 'block' : 'none';
+    }
+}
+
+function handleMedicineInput(inputElem) {
+    const row = inputElem.closest('.med-input-row');
+    const box = row ? row.querySelector('.med-suggestions-box') : null;
+    if (!box) return;
+
+    const query = inputElem.value.trim().toLowerCase();
+    if (query.length === 0) {
+        box.style.display = 'none';
+        return;
+    }
+
+    const matches = availableMedicines.filter(med => 
+        med.toLowerCase().startsWith(query) || med.toLowerCase().includes(query)
+    );
+
+    box.innerHTML = '';
+    if (matches.length > 0) {
+        matches.forEach(med => {
+            const item = document.createElement('div');
+            item.className = 'med-suggestion-item';
+            item.innerHTML = `<i class="fas fa-capsules" style="color:#0d9488; margin-right:8px;"></i> ${escapeHtml(med)}`;
+            item.onmousedown = function () {
+                inputElem.value = med;
                 box.style.display = 'none';
-                return;
+            };
+            box.appendChild(item);
+        });
+    } else {
+        const empty = document.createElement('div');
+        empty.className = 'med-suggestion-empty';
+        empty.innerText = 'No matching medicine in PharmaConnect catalog';
+        box.appendChild(empty);
+    }
+
+    box.style.display = 'block';
+}
+
+// Live GPS + Individual Nearest Pharmacies Lookup for Single or Multiple Medicines
+function findNearestPharmacies(medicineNamesRaw) {
+    const medList = (medicineNamesRaw || '')
+        .split(',')
+        .map(m => m.trim())
+        .filter(Boolean);
+
+    if (medList.length === 0) {
+        alert('Please enter or select at least one medicine name first.');
+        return;
+    }
+
+    const modal = document.getElementById('pharma-finder-modal');
+    const titleEl = document.getElementById('pharma-modal-title');
+    const bodyEl = document.getElementById('pharma-modal-body');
+
+    titleEl.innerHTML = `<i class="fas fa-mortar-pestle"></i> Closest Pharmacies (${medList.length} Medicine${medList.length > 1 ? 's' : ''})`;
+    bodyEl.innerHTML = `
+        <div style="text-align: center; padding: 36px 16px; color: #64748b;">
+            <i class="fas fa-satellite-dish fa-spin" style="font-size: 32px; color: #0d9488; margin-bottom: 14px;"></i>
+            <h4 style="margin: 0 0 4px 0; color: #0f172a; font-weight:800;">Locating Nearest Pharmacies...</h4>
+            <p style="margin: 0; font-size: 13px;">Checking real-time stock for: <strong>${escapeHtml(medList.join(', '))}</strong></p>
+        </div>
+    `;
+    modal.classList.add('active');
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => queryPharmaConnectStock(medList, pos.coords.latitude, pos.coords.longitude, true),
+            () => queryPharmaConnectStock(medList, 6.7951, 79.9009, false),
+            { enableHighAccuracy: true, timeout: 7000 }
+        );
+    } else {
+        queryPharmaConnectStock(medList, 6.7951, 79.9009, false);
+    }
+}
+
+async function queryPharmaConnectStock(medList, userLat, userLng, gpsLocked) {
+    const bodyEl = document.getElementById('pharma-modal-body');
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    try {
+        const { data: pharmacies, error: pharmErr } = await pharmaSupabase
+            .from('pharmacies')
+            .select('*');
+        if (pharmErr) throw pharmErr;
+
+        const pharmacyMap = {};
+        (pharmacies || []).forEach(p => {
+            const pLat = parseFloat(p.latitude) || 6.7951;
+            const pLng = parseFloat(p.longitude) || 79.9009;
+            pharmacyMap[p.id] = {
+                ...p,
+                distanceKm: calculateHaversineKm(userLat, userLng, pLat, pLng)
+            };
+        });
+
+        const gpsBanner = gpsLocked
+            ? `<div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:10px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-location-crosshairs"></i> Showing closest stores for each individual medicine from your live GPS location
+               </div>`
+            : `<div style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:10px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-info-circle"></i> Browser GPS blocked — distances calculated from default reference center
+               </div>`;
+
+        let allSectionsHtml = '';
+
+        // Query each medicine individually so every medicine gets its own closest stores
+        for (const medName of medList) {
+            const { data: stockRows, error: stockErr } = await pharmaSupabase
+                .from('grn_stock')
+                .select('pharmacy_id, medicine_name, current_quantity, selling_price, expiry_date')
+                .ilike('medicine_name', `%${medName}%`)
+                .gt('current_quantity', 0)
+                .gt('expiry_date', todayStr);
+
+            if (stockErr) throw stockErr;
+
+            allSectionsHtml += `<div style="margin-bottom: 22px;">
+                <h4 style="margin: 0 0 10px 0; padding: 8px 12px; background: #e0f2fe; color: #0369a1; border-radius: 8px; font-weight: 800; font-size: 14px;">
+                    <i class="fas fa-pills"></i> Medicine: ${escapeHtml(medName)}
+                </h4>`;
+
+            if (!stockRows || stockRows.length === 0) {
+                allSectionsHtml += `
+                    <div style="text-align: center; padding: 18px; background:#fff; border-radius:12px; border:1px dashed #cbd5e1; margin-bottom:12px;">
+                        <p style="font-size: 13px; color:#64748b; margin: 0;">No active stock found for <strong>${escapeHtml(medName)}</strong>.</p>
+                    </div></div>`;
+                continue;
             }
 
-            const query = inputElem.value.trim().toLowerCase();
-            if (query.length === 0) {
-                box.style.display = 'none';
-                return;
-            }
-
-            const matches = availableMedicines.filter(med => 
-                med.toLowerCase().startsWith(query) || med.toLowerCase().includes(query)
-            );
-
-            box.innerHTML = '';
-            if (matches.length > 0) {
-                matches.forEach(med => {
-                    const item = document.createElement('div');
-                    item.className = 'med-suggestion-item';
-                    item.innerHTML = `<i class="fas fa-capsules" style="color:#0d9488; margin-right:8px;"></i> ${escapeHtml(med)}`;
-                    item.onmousedown = function () {
-                        inputElem.value = med;
-                        box.style.display = 'none';
+            const stockByPharmacy = {};
+            stockRows.forEach(row => {
+                const pid = row.pharmacy_id;
+                if (!stockByPharmacy[pid]) {
+                    stockByPharmacy[pid] = {
+                        totalUnits: 0,
+                        minPrice: Number(row.selling_price)
                     };
-                    box.appendChild(item);
-                });
-            } else {
-                const empty = document.createElement('div');
-                empty.className = 'med-suggestion-empty';
-                empty.innerText = 'No matching medicine in PharmaConnect catalog';
-                box.appendChild(empty);
-            }
-
-            box.style.display = 'block';
-        }
-
-        // Live GPS + Nearest 5 Pharmacies Lookup
-        function findNearestPharmacies(medicineName) {
-            const cleanMed = (medicineName || '').trim();
-            if (!cleanMed) {
-                alert('Please enter or select a medicine name first.');
-                return;
-            }
-
-            const modal = document.getElementById('pharma-finder-modal');
-            const titleEl = document.getElementById('pharma-modal-title');
-            const bodyEl = document.getElementById('pharma-modal-body');
-
-            titleEl.innerHTML = `<i class="fas fa-mortar-pestle"></i> Pharmacies with "${escapeHtml(cleanMed)}"`;
-            bodyEl.innerHTML = `
-                <div style="text-align: center; padding: 36px 16px; color: #64748b;">
-                    <i class="fas fa-satellite-dish fa-spin" style="font-size: 32px; color: #0d9488; margin-bottom: 14px;"></i>
-                    <h4 style="margin: 0 0 4px 0; color: #0f172a; font-weight:800;">Locating Nearest Pharmacies...</h4>
-                    <p style="margin: 0; font-size: 13px;">Checking real-time PharmaConnect GRN stock batches & calculating GPS distance.</p>
-                </div>
-            `;
-            modal.classList.add('active');
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => queryPharmaConnectStock(cleanMed, pos.coords.latitude, pos.coords.longitude, true),
-                    () => queryPharmaConnectStock(cleanMed, 6.7951, 79.9009, false),
-                    { enableHighAccuracy: true, timeout: 7000 }
-                );
-            } else {
-                queryPharmaConnectStock(cleanMed, 6.7951, 79.9009, false);
-            }
-        }
-
-        async function queryPharmaConnectStock(medicineName, userLat, userLng, gpsLocked) {
-            const bodyEl = document.getElementById('pharma-modal-body');
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            try {
-                const { data: stockRows, error: stockErr } = await pharmaSupabase
-                    .from('grn_stock')
-                    .select('pharmacy_id, medicine_name, current_quantity, selling_price, expiry_date')
-                    .ilike('medicine_name', `%${medicineName}%`)
-                    .gt('current_quantity', 0)
-                    .gt('expiry_date', todayStr);
-
-                if (stockErr) throw stockErr;
-
-                if (!stockRows || stockRows.length === 0) {
-                    bodyEl.innerHTML = `
-                        <div style="text-align: center; padding: 32px 16px; background:#fff; border-radius:14px; border:1px dashed #cbd5e1;">
-                            <i class="fas fa-box-open" style="font-size: 38px; color: #94a3b8; margin-bottom: 12px;"></i>
-                            <h4 style="color: #0f172a; margin: 0 0 6px 0; font-weight:800;">Currently Out of Stock</h4>
-                            <p style="font-size: 13.5px; color:#64748b; margin: 0;">No registered PharmaConnect pharmacies have active, non-expired stock for <strong>${escapeHtml(medicineName)}</strong> right now.</p>
-                        </div>
-                    `;
-                    return;
                 }
+                stockByPharmacy[pid].totalUnits += Number(row.current_quantity || 0);
+                if (Number(row.selling_price) < stockByPharmacy[pid].minPrice) {
+                    stockByPharmacy[pid].minPrice = Number(row.selling_price);
+                }
+            });
 
-                const stockByPharmacy = {};
-                stockRows.forEach(row => {
-                    const pid = row.pharmacy_id;
-                    if (!stockByPharmacy[pid]) {
-                        stockByPharmacy[pid] = {
-                            totalUnits: 0,
-                            minPrice: Number(row.selling_price),
-                            matchedName: row.medicine_name
-                        };
-                    }
-                    stockByPharmacy[pid].totalUnits += Number(row.current_quantity || 0);
-                    if (Number(row.selling_price) < stockByPharmacy[pid].minPrice) {
-                        stockByPharmacy[pid].minPrice = Number(row.selling_price);
-                    }
-                });
+            const rankedForThisMed = Object.keys(stockByPharmacy)
+                .map(pid => pharmacyMap[pid] ? { ...pharmacyMap[pid], stock: stockByPharmacy[pid] } : null)
+                .filter(Boolean)
+                .sort((a, b) => a.distanceKm - b.distanceKm)
+                .slice(0, 5);
 
-                const pharmacyIds = Object.keys(stockByPharmacy);
-
-                const { data: pharmacies, error: pharmErr } = await pharmaSupabase
-                    .from('pharmacies')
-                    .select('*')
-                    .in('id', pharmacyIds);
-
-                if (pharmErr) throw pharmErr;
-
-                const rankedPharmacies = (pharmacies || []).map(p => {
-                    const pLat = parseFloat(p.latitude) || 6.7951;
-                    const pLng = parseFloat(p.longitude) || 79.9009;
-                    const distanceKm = calculateHaversineKm(userLat, userLng, pLat, pLng);
-                    return {
-                        ...p,
-                        distanceKm,
-                        stock: stockByPharmacy[p.id]
-                    };
-                }).sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 5);
-
-                const gpsBanner = gpsLocked
-                    ? `<div style="background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; padding:10px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                        <i class="fas fa-location-crosshairs"></i> Showing top ${rankedPharmacies.length} nearest pharmacies based on your live GPS location
-                       </div>`
-                    : `<div style="background:#fffbeb; border:1px solid #fde68a; color:#92400e; padding:10px 14px; border-radius:10px; font-size:12.5px; margin-bottom:14px; font-weight:700; display:flex; align-items:center; gap:8px;">
-                        <i class="fas fa-info-circle"></i> Browser GPS blocked — distances calculated from default reference center
-                       </div>`;
-
-                const cardsHtml = rankedPharmacies.map((p, idx) => `
-                    <div class="pharma-result-item">
-                        <div>
-                            <span class="pharma-rank-badge"><i class="fas fa-award"></i> #${idx + 1} Nearest • ${p.distanceKm.toFixed(1)} km away</span>
-                            <h4 style="margin: 2px 0 5px 0; color: #0f172a; font-size: 16.5px; font-weight:800;">${escapeHtml(p.pharmacy_name)}</h4>
-                            <p style="margin: 0; font-size: 13px; color: #64748b; font-weight:500;">
-                                <i class="fas fa-map-marker-alt" style="color: #0d9488;"></i> ${escapeHtml(p.address)}, ${escapeHtml(p.city)}
-                                ${p.phone ? ` &bull; <i class="fas fa-phone-alt" style="color:#2563eb;"></i> ${escapeHtml(p.phone)}` : ''}
-                            </p>
-                            <div class="pharma-stock-pill">
-                                <i class="fas fa-boxes-stacked"></i> ${p.stock.totalUnits} units available &bull; LKR ${p.stock.minPrice.toFixed(2)} / unit
-                            </div>
+            allSectionsHtml += rankedForThisMed.map((p, idx) => `
+                <div class="pharma-result-item">
+                    <div>
+                        <span class="pharma-rank-badge"><i class="fas fa-award"></i> #${idx + 1} Nearest • ${p.distanceKm.toFixed(1)} km away</span>
+                        <h4 style="margin: 2px 0 5px 0; color: #0f172a; font-size: 16px; font-weight:800;">${escapeHtml(p.pharmacy_name)}</h4>
+                        <p style="margin: 0; font-size: 13px; color: #64748b; font-weight:500;">
+                            <i class="fas fa-map-marker-alt" style="color: #0d9488;"></i> ${escapeHtml(p.address)}, ${escapeHtml(p.city)}
+                        </p>
+                        <div class="pharma-stock-pill">
+                            <i class="fas fa-boxes-stacked"></i> ${p.stock.totalUnits} units available • LKR ${p.stock.minPrice.toFixed(2)} / unit
                         </div>
-                        <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.latitude + ',' + p.longitude)}" target="_blank" rel="noopener" class="btn-directions">
-                            <i class="fas fa-diamond-turn-right"></i> Get Directions
-                        </a>
                     </div>
-                `).join('');
-
-                bodyEl.innerHTML = gpsBanner + cardsHtml;
-
-            } catch (err) {
-                console.error('PharmaConnect lookup error:', err);
-                bodyEl.innerHTML = `
-                    <div style="text-align: center; padding: 24px; color: #dc2626; background:#fef2f2; border-radius:12px;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 28px; margin-bottom: 8px;"></i>
-                        <p style="margin: 0; font-weight: 700;">Failed to query PharmaConnect inventory: ${escapeHtml(err.message)}</p>
-                    </div>
-                `;
-            }
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.latitude + ',' + p.longitude)}" target="_blank" rel="noopener" class="btn-directions">
+                        <i class="fas fa-diamond-turn-right"></i> Get Directions
+                    </a>
+                </div>
+            `).join('') + `</div>`;
         }
+
+        bodyEl.innerHTML = gpsBanner + allSectionsHtml;
+
+    } catch (err) {
+        console.error('PharmaConnect lookup error:', err);
+        bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 24px; color: #dc2626; background:#fef2f2; border-radius:12px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 28px; margin-bottom: 8px;"></i>
+                <p style="margin: 0; font-weight: 700;">Failed to query PharmaConnect inventory: ${escapeHtml(err.message)}</p>
+            </div>
+        `;
+    }
+}
 
         function closePharmaModal() {
             document.getElementById('pharma-finder-modal').classList.remove('active');
