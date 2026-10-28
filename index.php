@@ -1021,6 +1021,49 @@ function formatDateTime($datetime) {
             .pharma-result-item { flex-direction: column; align-items: flex-start; }
             .btn-directions, .btn-download-bridge { width: 100%; justify-content: center; box-sizing: border-box; }
         }
+
+        /* Scrollable Completed History Log Styles */
+.history-scroll-container {
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-scroll-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 999px;
+}
+
+.history-scroll-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+.history-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.history-log-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+    transition: all 0.2s ease;
+}
+
+.history-log-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    border-color: #cbd5e1;
+}
     </style>
     <link rel="icon" type="image/png" href="Firefly.png">
     <link rel="manifest" href="manifest.json">
@@ -1482,77 +1525,121 @@ function formatDateTime($datetime) {
                     </div>
 
                     <!-- PENDING AND DONE TABS -->
-                    <div class="dashboard-grid" style="margin-bottom: 24px;">
-                        
-                        <!-- Member's Pending Tasks -->
-                        <div class="dash-column">
-                            <h3><i class="fas fa-hourglass-half" style="color: var(--cs-warning);"></i> Pending Schedule</h3>
-                                <?php 
-                                $has_pending = false;
-                                foreach($this_member_tasks as $task) {
-                                    if($task['status'] == 'Pending') {
-                                        $has_pending = true;
-                                        echo "<div class='task-item' style='border-left:5px solid var(--cs-primary) !important; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;'>";
-                                        echo "<div>";
-                                        echo "<div style='display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;'>";
-                                        echo "<h4 style='margin:0; font-weight:800;'>".htmlspecialchars($task['title'])."</h4>";
-                                        if (!empty($task['is_recurring'])) {
-                                            echo "<span style='background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;'><i class='fas fa-sync-alt'></i> Auto-Repeating</span>";
-                                        }
-                                        echo "</div>";
-                                        echo "<p style='font-size:13px; color:var(--cs-text-muted); margin:0;'><i class='far fa-clock'></i> ".formatDateTime($task['schedule_time'])."</p>";
-                                        if (!empty($task['instructions'])) {
-                                            echo "<p style='font-size:12.5px; margin:6px 0 0 0; color:#475569;'>".htmlspecialchars($task['instructions'])."</p>";
-                                        }
-                                        echo "</div>";
+<div class="dashboard-grid" style="margin-bottom: 24px;">
+    
+    <!-- Member's Pending Tasks -->
+    <div class="dash-column">
+        <h3><i class="fas fa-hourglass-half" style="color: var(--cs-warning);"></i> Pending Schedule</h3>
+        <?php 
+        $has_pending = false;
+        foreach($this_member_tasks as $task) {
+            if($task['status'] == 'Pending') {
+                $has_pending = true;
+                $raw_note = trim($task['instructions'] ?? '');
+                $has_valid_note = (!empty($raw_note) && strtolower($raw_note) !== 'none');
 
-                                        echo "<div style='display:flex; gap:8px; align-items:center; flex-wrap:wrap;'>";
-                                        if ($task['task_type'] === 'Medicine') {
-                                            $safeTitle = addslashes($task['title']);
-                                            echo "<button type='button' class='btn-action-find find-med-btn' onclick=\"findNearestPharmacies('{$safeTitle}')\"><i class='fas fa-map-marker-alt'></i> Find a Pharmacy</button>";
-                                        }
-                                        // Cancel Rescheduling Loop Button (ONLY in Member Profile, never on Main Dashboard)
-                                        if (!empty($task['is_recurring'])) {
-                                            echo "<form action='index.php' method='POST' style='margin:0;' onsubmit=\"return confirm('Stop future automatic rescheduling for this task?');\">
-                                                    <input type='hidden' name='stop_recurrence_id' value='{$task['id']}'>
-                                                    <button type='submit' style='background:#fff1f2; color:#be123c; border:1px solid #fecdd3; padding:8px 12px; border-radius:10px; font-weight:700; font-size:12.5px; cursor:pointer;'>
-                                                        <i class='fas fa-stop-circle'></i> Stop Repeat
-                                                    </button>
-                                                </form>";
-                                        }
-                                        echo "</div>";
-                                        echo "</div>";
-                                    }
-                                }
-                                if(!$has_pending) echo "<p class='empty-state' style='text-align:center; color:#94a3b8; padding:20px;'>No pending tasks.</p>";
-                                ?>
-                        </div>
+                echo "<div class='task-item' style='border-left:5px solid var(--cs-primary) !important; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;'>";
+                
+                // Left Side: Task Details
+                echo "<div style='flex: 1; min-width: 200px;'>";
+                echo "<div style='display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:5px;'>";
+                echo "<h4 style='margin:0; font-weight:800; color:#0f172a; font-size:1.02rem;'>".htmlspecialchars($task['title'])."</h4>";
+                if (!empty($task['is_recurring'])) {
+                    echo "<span style='background:#e0f2fe; color:#0369a1; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; border:1px solid #bae6fd;'><i class='fas fa-sync-alt'></i> Auto-Repeating</span>";
+                }
+                echo "</div>";
+                echo "<p style='font-size:13px; color:var(--cs-text-muted); margin:0; font-weight:500;'><i class='far fa-clock' style='color:var(--cs-primary);'></i> ".formatDateTime($task['schedule_time'])."</p>";
+                if ($has_valid_note) {
+                    echo "<p style='font-size:12.5px; margin:8px 0 0 0; color:#475569; background:#f8fafc; padding:6px 10px; border-radius:8px; border-left:3px solid #cbd5e1;'>".htmlspecialchars($raw_note)."</p>";
+                }
+                echo "</div>";
 
-                        <!-- Member's History Log -->
-                        <div class="dash-column">
-                            <h3><i class="fas fa-history" style="color: var(--cs-success);"></i> Completed History</h3>
-                            <?php 
-                            $has_done = false;
-                            foreach($this_member_tasks as $task) {
-                                if(strpos($task['status'], 'Done') !== false) {
-                                    $has_done = true;
-                                    $borderCol = ($task['status'] == 'Done_Late') ? 'var(--cs-danger)' : 'var(--cs-success)';
-                                    echo "<div class='task-item task-done' style='border-left:5px solid {$borderCol} !important; opacity:0.9;'>";
-                                    echo "<h4 style='margin:0 0 4px 0; font-weight:700;'>".htmlspecialchars($task['title'])."</h4>";
-                                    
-                                    if ($task['status'] == 'Done_Late') {
-                                        echo "<p style='font-size:12.5px; color: var(--cs-danger); font-weight: 700; margin:0;'><i class='fas fa-exclamation-triangle'></i> Completed Late</p>";
-                                    } else {
-                                        echo "<p style='font-size:12.5px; color: var(--cs-success); font-weight: 700; margin:0;'><i class='fas fa-check-circle'></i> Completed On Time</p>";
-                                    }
-                                    echo "</div>";
-                                }
-                            }
-                            if(!$has_done) echo "<p class='empty-state' style='text-align:center; color:#94a3b8; padding:20px;'>No completed history yet.</p>";
-                            ?>
-                        </div>
+                // Right Side: Action Buttons (Find Pharmacy, Stop Repeat, Delete Task)
+                echo "<div style='display:flex; gap:8px; align-items:center; flex-wrap:wrap;'>";
+                
+                if ($task['task_type'] === 'Medicine') {
+                    $safeTitle = addslashes($task['title']);
+                    echo "<button type='button' class='btn-action-find find-med-btn' onclick=\"findNearestPharmacies('{$safeTitle}')\">
+                            <i class='fas fa-map-marker-alt'></i> Find a Pharmacy
+                          </button>";
+                }
 
-                    </div>
+                // Stop Rescheduling Button (Member Profile Only)
+                if (!empty($task['is_recurring'])) {
+                    echo "<form action='index.php' method='POST' style='margin:0;' onsubmit=\"return confirm('Stop future automatic rescheduling for this task?');\">
+                            <input type='hidden' name='stop_recurrence_id' value='{$task['id']}'>
+                            <button type='submit' style='background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:9px 13px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;'>
+                                <i class='fas fa-stop-circle'></i> Stop Repeat
+                            </button>
+                          </form>";
+                }
+
+                // Delete Pending Task Button (Triggers Custom Delete Modal)
+                echo "<form id='member-delete-form-{$task['id']}' action='index.php' method='POST' style='margin:0;'>
+                        <input type='hidden' name='delete_task_id' value='{$task['id']}'>
+                        <button type='button' onclick=\"openDeleteModal('member-delete-form-{$task['id']}')\" class='btn-danger' style='background:#ef4444; color:#ffffff; border:none; padding:9px 14px; border-radius:10px; font-weight:700; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 10px rgba(239, 68, 68, 0.22);'>
+                            <i class='fas fa-trash-alt'></i> Delete
+                        </button>
+                      </form>";
+
+                echo "</div>";
+                echo "</div>";
+            }
+        }
+        if(!$has_pending) echo "<p class='empty-state' style='text-align:center; color:#94a3b8; padding:28px 20px;'>No pending tasks scheduled.</p>";
+        ?>
+    </div>
+
+    <!-- Member's Completed History Log (Scrollable & Upgraded Visuals) -->
+    <div class="dash-column">
+        <h3><i class="fas fa-history" style="color: var(--cs-success);"></i> Completed History</h3>
+        
+        <div class="history-scroll-container">
+            <?php 
+            $has_done = false;
+            // Reverse array so the most recently completed tasks appear at the top of the log
+            $reversed_tasks = array_reverse($this_member_tasks);
+            foreach($reversed_tasks as $task) {
+                if(strpos($task['status'], 'Done') !== false) {
+                    $has_done = true;
+                    $is_late = ($task['status'] == 'Done_Late');
+                    $borderCol = $is_late ? '#ef4444' : '#10b981';
+                    $badgeBg = $is_late ? '#fef2f2' : '#ecfdf5';
+                    $badgeText = $is_late ? '#dc2626' : '#059669';
+                    $badgeBorder = $is_late ? '#fecaca' : '#a7f3d0';
+                    $statusIcon = $is_late ? 'fa-exclamation-circle' : 'fa-check-circle';
+                    $statusLabel = $is_late ? 'Completed Late' : 'Completed On Time';
+                    $typeIcon = ($task['task_type'] === 'Clinic Date') ? 'fa-hospital-user' : 'fa-capsules';
+
+                    // Use completed_at if recorded, otherwise fallback to schedule_time
+                    $done_timestamp = !empty($task['completed_at']) ? formatDateTime($task['completed_at']) : formatDateTime($task['schedule_time']);
+                    $scheduled_timestamp = formatDateTime($task['schedule_time']);
+
+                    echo "<div class='history-log-card' style='border-left: 5px solid {$borderCol};'>";
+                    
+                    echo "<div style='display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; margin-bottom:8px;'>";
+                    echo "<h4 style='margin:0; font-weight:800; color:#0f172a; font-size:0.98rem; display:flex; align-items:center; gap:8px;'>
+                            <i class='fas {$typeIcon}' style='color:#64748b; font-size:13px;'></i> " . htmlspecialchars($task['title']) . "
+                          </h4>";
+                    echo "<span style='background:{$badgeBg}; color:{$badgeText}; border:1px solid {$badgeBorder}; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:5px;'>
+                            <i class='fas {$statusIcon}'></i> {$statusLabel}
+                          </span>";
+                    echo "</div>";
+
+                    echo "<div style='display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:#64748b; font-weight:600;'>";
+                    echo "<span><i class='fas fa-check-double' style='color:{$badgeText}; margin-right:4px;'></i> <strong>Done:</strong> {$done_timestamp}</span>";
+                    echo "<span><i class='far fa-calendar-alt' style='color:#94a3b8; margin-right:4px;'></i> <strong>Scheduled:</strong> {$scheduled_timestamp}</span>";
+                    echo "</div>";
+
+                    echo "</div>";
+                }
+            }
+            if(!$has_done) echo "<p class='empty-state' style='text-align:center; color:#94a3b8; padding:28px 20px;'>No completed history yet.</p>";
+            ?>
+        </div>
+    </div>
+
+</div>
 
                     <!-- FORM TO ADD TASK -->
 <div class="form-card">
