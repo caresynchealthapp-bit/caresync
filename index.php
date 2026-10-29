@@ -23,7 +23,16 @@ $user_id = $_SESSION['user_id'];
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_member'])) {
     $name = $conn->real_escape_string($_POST['name']);
     $relation = $conn->real_escape_string($_POST['relation']);
-    $conn->query("INSERT INTO members (user_id, name, relation) VALUES ('$user_id', '$name', '$relation')");
+    
+    // Capture optional fields, set to NULL if empty
+    $dob = !empty($_POST['dob']) ? "'" . $conn->real_escape_string($_POST['dob']) . "'" : "NULL";
+    $gender = !empty($_POST['gender']) ? "'" . $conn->real_escape_string($_POST['gender']) . "'" : "NULL";
+    $blood_group = !empty($_POST['blood_group']) ? "'" . $conn->real_escape_string($_POST['blood_group']) . "'" : "NULL";
+    $allergies = !empty($_POST['allergies']) ? "'" . $conn->real_escape_string($_POST['allergies']) . "'" : "NULL";
+
+    // Insert into database matching your new schema
+    $conn->query("INSERT INTO members (user_id, name, relation, dob, gender, blood_group, allergies) 
+                  VALUES ('$user_id', '$name', '$relation', $dob, $gender, $blood_group, $allergies)");
     header("Location: index.php");
     exit();
 }
@@ -1481,19 +1490,58 @@ function formatDateTime($datetime) {
                             <label>Full Name *</label>
                             <input type="text" name="name" required placeholder="e.g. Kasun Perera">
                         </div>
-                        <div class="form-group">
-                            <label>Relationship *</label>
-                            <select name="relation" required>
-                                <option value="Mother">Mother</option>
-                                <option value="Father">Father</option>
-                                <option value="Brother">Brother</option>
-                                <option value="Sister">Sister</option>
-                                <option value="Son">Son</option>
-                                <option value="Daughter">Daughter</option>
-                                <option value="Self">Self</option>
-                                <option value="Other">Other</option>
-                            </select>
+                        
+                        <div class="two-col">
+                            <div class="form-group">
+                                <label>Relationship *</label>
+                                <select name="relation" required>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Brother">Brother</option>
+                                    <option value="Sister">Sister</option>
+                                    <option value="Son">Son</option>
+                                    <option value="Daughter">Daughter</option>
+                                    <option value="Self">Self</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date of Birth (Optional)</label>
+                                <input type="date" name="dob">
+                            </div>
                         </div>
+
+                        <div class="two-col">
+                            <div class="form-group">
+                                <label>Gender (Optional)</label>
+                                <select name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Blood Group (Optional)</label>
+                                <select name="blood_group">
+                                    <option value="">Select Type</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Known Allergies (Optional)</label>
+                            <input type="text" name="allergies" placeholder="e.g. Peanuts, Penicillin, Dust">
+                        </div>
+
                         <button type="submit" name="add_member" class="btn-primary"><i class="fas fa-check-circle"></i> Create Member Profile</button>
                     </form>
                 </div>
@@ -1514,8 +1562,31 @@ function formatDateTime($datetime) {
                                 <?php echo strtoupper(substr($row['name'], 0, 1)); ?>
                             </div>
                             <div>
-                                <h2 style="margin: 0 0 4px 0; font-weight:800; font-size:1.35rem;"><?php echo $member_name; ?></h2>
-                                <span class="member-badge">Relation: <?php echo htmlspecialchars($row['relation']); ?></span>
+                                <h2 style="margin: 0 0 6px 0; font-weight:800; font-size:1.35rem;"><?php echo $member_name; ?></h2>
+                                
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                                    <span class="member-badge">Relation: <?php echo htmlspecialchars($row['relation']); ?></span>
+                                    
+                                    <?php if(!empty($row['blood_group'])): ?>
+                                        <span class="member-badge" style="background: #fee2e2 !important; color: #dc2626 !important; border-color: #fecaca;"><i class="fas fa-tint"></i> <?php echo htmlspecialchars($row['blood_group']); ?></span>
+                                    <?php endif; ?>
+                                    
+                                    <?php if(!empty($row['gender'])): ?>
+                                        <span class="member-badge" style="background: #f3f4f6 !important; color: #4b5563 !important; border-color: #e5e7eb;"><i class="fas fa-venus-mars"></i> <?php echo htmlspecialchars($row['gender']); ?></span>
+                                    <?php endif; ?>
+                                    
+                                    <?php if(!empty($row['dob'])): ?>
+                                        <?php $age = date_diff(date_create($row['dob']), date_create('today'))->y; ?>
+                                        <span class="member-badge" style="background: #fef3c7 !important; color: #d97706 !important; border-color: #fde68a;"><i class="fas fa-birthday-cake"></i> Age: <?php echo $age; ?></span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <?php if(!empty($row['allergies'])): ?>
+                                    <div style="font-size: 12px; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 8px; border-left: 3px solid #f59e0b; display: inline-block;">
+                                        <strong><i class="fas fa-allergies" style="color: #d97706;"></i> Allergies:</strong> <?php echo htmlspecialchars($row['allergies']); ?>
+                                    </div>
+                                <?php endif; ?>
+
                             </div>
                         </div>
                         <form action="index.php" method="POST" onsubmit="return confirm('Delete this member and all their scheduled tasks?');">
