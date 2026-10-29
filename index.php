@@ -1479,7 +1479,7 @@ function formatDateTime($datetime) {
                     <form action="index.php" method="POST">
                         <div class="form-group">
                             <label>Full Name *</label>
-                            <input type="text" name="name" required placeholder="e.g. Chooty / Kasun Perera">
+                            <input type="text" name="name" required placeholder="e.g. Kasun Perera">
                         </div>
                         <div class="form-group">
                             <label>Relationship *</label>
