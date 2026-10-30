@@ -1690,7 +1690,7 @@ function formatDateTime($datetime) {
                             </div>
                         </div>
                     </div>
-                    
+
                     </div>
 
                     <!-- PENDING AND DONE TABS -->
@@ -2485,6 +2485,14 @@ async function queryPharmaConnectStock(medList, userLat, userLng, gpsLocked) {
                     highlightBox.classList.remove('support-active-glow');
                 }, 2400);
             }
+        }
+
+        function openEditMemberModal(id) {
+            document.getElementById('edit-member-modal-' + id).classList.add('active');
+        }
+
+        function closeEditMemberModal(id) {
+            document.getElementById('edit-member-modal-' + id).classList.remove('active');
         }
     </script>
     <script src="script.js"></script>
