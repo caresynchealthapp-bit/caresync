@@ -1611,9 +1611,9 @@ function formatDateTime($datetime) {
                             <button type="button" onclick="openEditMemberModal(<?php echo $member_id; ?>)" style="background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px 16px; font-weight: 700; cursor: pointer; transition: all 0.2s;"><i class="fas fa-edit"></i> Edit</button>
                             
                             <!-- Delete Button -->
-                            <form action="index.php" method="POST" onsubmit="return confirm('Delete this member and all their scheduled tasks?');" style="margin: 0;">
+                            <form id="delete-member-form-<?php echo $member_id; ?>" action="index.php" method="POST" style="margin: 0;">
                                 <input type="hidden" name="delete_member_id" value="<?php echo $member_id; ?>">
-                                <button type="submit" class="btn-danger" style="border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-trash"></i> Remove Profile</button>
+                                <button type="button" onclick="openDeleteMemberModal('delete-member-form-<?php echo $member_id; ?>')" class="btn-danger" style="border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-trash"></i> Remove Profile</button>
                             </form>
                         </div>
 
@@ -2113,6 +2113,26 @@ function formatDateTime($datetime) {
         </div>
     </div>
 
+            <!-- CUSTOM DELETE MEMBER MODAL -->
+        <div id="delete-member-modal" class="pharma-modal-backdrop" onclick="if(event.target === this) closeDeleteMemberModal()">
+            <div class="pharma-modal-card" style="max-width: 400px; text-align: center; padding: 32px 24px; border-radius: 24px;">
+                <div style="width: 64px; height: 64px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px;">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <h3 style="margin: 0 0 8px 0; font-size: 1.25rem; font-weight: 800; color: #0f172a;">Remove Family Member?</h3>
+                <p style="margin: 0 0 24px 0; font-size: 14px; color: #64748b; line-height: 1.5;">This will permanently delete this profile and <strong>all</strong> of their associated clinic and medicine schedules. This cannot be undone.</p>
+                
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button type="button" onclick="closeDeleteMemberModal()" style="padding: 10px 20px; border-radius: 12px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                        Cancel
+                    </button>
+                    <button type="button" id="confirm-delete-member-btn" style="padding: 10px 20px; border-radius: 12px; border: none; background: #ef4444; color: #ffffff; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25); transition: all 0.2s;">
+                        Yes, Remove Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+
     <div id="toast-container" class="toast-container"></div>
 
     <script>
@@ -2494,6 +2514,25 @@ async function queryPharmaConnectStock(medList, userLat, userLng, gpsLocked) {
         function closeEditMemberModal(id) {
             document.getElementById('edit-member-modal-' + id).classList.remove('active');
         }
+
+        // --- Member Deletion Modal Logic ---
+        let memberFormToSubmitId = null;
+
+        function openDeleteMemberModal(formId) {
+            memberFormToSubmitId = formId;
+            document.getElementById('delete-member-modal').classList.add('active');
+        }
+
+        function closeDeleteMemberModal() {
+            memberFormToSubmitId = null;
+            document.getElementById('delete-member-modal').classList.remove('active');
+        }
+
+        document.getElementById('confirm-delete-member-btn').addEventListener('click', function() {
+            if (memberFormToSubmitId) {
+                document.getElementById(memberFormToSubmitId).submit();
+            }
+        });
     </script>
     <script src="script.js"></script>
 </body>
