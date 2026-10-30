@@ -37,6 +37,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_member'])) {
     exit();
 }
 
+// --- 1.5 HANDLE EDITING MEMBER ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['edit_member'])) {
+    $member_id = (int)$_POST['member_id'];
+    $name = $conn->real_escape_string($_POST['name']);
+    $relation = $conn->real_escape_string($_POST['relation']);
+    
+    // Capture optional fields, set to NULL if empty
+    $dob = !empty($_POST['dob']) ? "'" . $conn->real_escape_string($_POST['dob']) . "'" : "NULL";
+    $gender = !empty($_POST['gender']) ? "'" . $conn->real_escape_string($_POST['gender']) . "'" : "NULL";
+    $blood_group = !empty($_POST['blood_group']) ? "'" . $conn->real_escape_string($_POST['blood_group']) . "'" : "NULL";
+    $allergies = !empty($_POST['allergies']) ? "'" . $conn->real_escape_string($_POST['allergies']) . "'" : "NULL";
+
+    $conn->query("UPDATE members SET name='$name', relation='$relation', dob=$dob, gender=$gender, blood_group=$blood_group, allergies=$allergies WHERE id=$member_id AND user_id='$user_id'");
+    header("Location: index.php");
+    exit();
+}
+
 // --- 2. HANDLE DELETING MEMBER ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_member_id'])) {
     $delete_id = (int)$_POST['delete_member_id'];
@@ -1589,10 +1606,91 @@ function formatDateTime($datetime) {
 
                             </div>
                         </div>
-                        <form action="index.php" method="POST" onsubmit="return confirm('Delete this member and all their scheduled tasks?');">
-                            <input type="hidden" name="delete_member_id" value="<?php echo $member_id; ?>">
-                            <button type="submit" class="btn-danger" style="border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-trash"></i> Remove Profile</button>
-                        </form>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <!-- Edit Button -->
+                            <button type="button" onclick="openEditMemberModal(<?php echo $member_id; ?>)" style="background: #f8fafc; color: #475569; border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px 16px; font-weight: 700; cursor: pointer; transition: all 0.2s;"><i class="fas fa-edit"></i> Edit</button>
+                            
+                            <!-- Delete Button -->
+                            <form action="index.php" method="POST" onsubmit="return confirm('Delete this member and all their scheduled tasks?');" style="margin: 0;">
+                                <input type="hidden" name="delete_member_id" value="<?php echo $member_id; ?>">
+                                <button type="submit" class="btn-danger" style="border-radius:10px; padding:10px 16px; font-weight:700; cursor:pointer;"><i class="fas fa-trash"></i> Remove Profile</button>
+                            </form>
+                        </div>
+
+                        <!-- EDIT MEMBER MODAL (Hidden by default) -->
+                    <div id="edit-member-modal-<?php echo $member_id; ?>" class="pharma-modal-backdrop" onclick="if(event.target === this) closeEditMemberModal(<?php echo $member_id; ?>)">
+                        <div class="pharma-modal-card" style="max-width: 580px;">
+                            <div class="pharma-modal-header">
+                                <h3 style="margin:0;"><i class="fas fa-user-edit"></i> Edit Profile</h3>
+                                <button type="button" class="pharma-modal-close" onclick="closeEditMemberModal(<?php echo $member_id; ?>)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="pharma-modal-body" style="padding: 24px;">
+                                <form action="index.php" method="POST">
+                                    <input type="hidden" name="edit_member" value="1">
+                                    <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
+                                    
+                                    <div class="form-group">
+                                        <label>Full Name *</label>
+                                        <input type="text" name="name" required value="<?php echo htmlspecialchars($row['name']); ?>">
+                                    </div>
+                                    
+                                    <div class="two-col">
+                                        <div class="form-group">
+                                            <label>Relationship *</label>
+                                            <select name="relation" required>
+                                                <?php 
+                                                $rels = ['Mother','Father','Brother','Sister','Son','Daughter','Self','Other'];
+                                                foreach($rels as $r) {
+                                                    $sel = ($row['relation'] == $r) ? 'selected' : '';
+                                                    echo "<option value='$r' $sel>$r</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Date of Birth (Optional)</label>
+                                            <input type="date" name="dob" value="<?php echo htmlspecialchars($row['dob'] ?? ''); ?>">
+                                        </div>
+                                    </div>
+
+                                    <div class="two-col">
+                                        <div class="form-group">
+                                            <label>Gender (Optional)</label>
+                                            <select name="gender">
+                                                <option value="">Select Gender</option>
+                                                <option value="Male" <?php if(($row['gender']??'')=='Male') echo 'selected'; ?>>Male</option>
+                                                <option value="Female" <?php if(($row['gender']??'')=='Female') echo 'selected'; ?>>Female</option>
+                                                <option value="Other" <?php if(($row['gender']??'')=='Other') echo 'selected'; ?>>Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Blood Group (Optional)</label>
+                                            <select name="blood_group">
+                                                <option value="">Select Type</option>
+                                                <?php 
+                                                $bgs = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+                                                foreach($bgs as $bg) {
+                                                    $sel = (($row['blood_group']??'') == $bg) ? 'selected' : '';
+                                                    echo "<option value='$bg' $sel>$bg</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Known Allergies (Optional)</label>
+                                        <input type="text" name="allergies" value="<?php echo htmlspecialchars($row['allergies'] ?? ''); ?>" placeholder="e.g. Peanuts, Penicillin">
+                                    </div>
+
+                                    <button type="submit" class="btn-primary" style="width:100%;"><i class="fas fa-save"></i> Save Changes</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
                     </div>
 
                     <!-- PENDING AND DONE TABS -->
